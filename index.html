@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI-Powered Content Creation Platform · Workflow & SLA drafts</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --navy:#1C1D4F; --mint:#B8E8D3; --grey:#F4F4F2; --msg:#55577A; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Poppins, system-ui, sans-serif; color:var(--navy); background:#fff; }
+  .wrap { max-width:1100px; margin:0 auto; padding:48px 32px; }
+  h1 { margin:0; font-size:32px; font-weight:700; }
+  .sub { margin:6px 0 0; font-size:15px; color:var(--msg); }
+  .key { margin:16px 0 0; font-size:15px; font-weight:600; }
+  h2 { font-size:19px; margin:36px 0 12px; display:flex; align-items:center; gap:10px; }
+  h2 .n { display:inline-flex; width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-size:14px; align-items:center; justify-content:center; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px; }
+  a.card { display:block; background:var(--grey); border-radius:14px; padding:18px 20px; color:inherit; text-decoration:none; border:1.5px solid transparent; transition:border-color .15s, transform .15s; }
+  a.card:hover { border-color:var(--navy); transform:translateY(-2px); }
+  .tag { display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; background:var(--navy); color:#fff; }
+  .tag.sla { background:var(--mint); color:var(--navy); }
+  .card h3 { margin:10px 0 6px; font-size:17px; }
+  .card p { margin:0; font-size:13px; line-height:1.55; color:var(--msg); }
+  .card .stat { margin-top:12px; font-size:13px; font-weight:600; }
+  footer { margin-top:44px; font-size:12px; color:var(--msg); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI-Powered Content Creation Platform</h1>
+  <p class="sub">Workflow and SLA drafts for internal review · 12 Nov 2026</p>
+  <p class="key">Two workflows (BAU and Trendjacking), each with a process map and an SLA draft from brief final to final client approval.</p>
+
+  <h2><span class="n">1</span>BAU: monthly-planned content</h2>
+  <div class="grid">
+    <a class="card" href="bau-bpmn.html"><span class="tag">BPMN</span><h3>BAU Content Workflow</h3><p>Brief to approved mood board, then production to final approval. Trend Library for brainstorming and AI-generated mood boards in the platform.</p></a>
+    <a class="card" href="bau-sla.html"><span class="tag sla">SLA simulation</span><h3>Draft SLA · BAU</h3><p>Timeline for one 15-second video, turnaround per step, commitments on both sides, and a calculator for more videos and producers.</p><div class="stat">29 h 20 min for one video · SLA 5 business days</div></a>
+  </div>
+
+  <h2><span class="n">2</span>Trendjacking: occasion- or trend-driven content</h2>
+  <div class="grid">
+    <a class="card" href="trendjacking-bpmn.html"><span class="tag">BPMN</span><h3>Trendjacking Content Workflow</h3><p>Started by the client or suggested by the Strategist AI. Same gates and reviewers as BAU; content is posted even if the deadline is missed.</p></a>
+    <a class="card" href="trendjacking-sla.html"><span class="tag sla">SLA simulation</span><h3>Draft SLA · Trendjacking</h3><p>Fast-track turnaround on a 2-business-day clock, with switches to simulate ways of shortening the timeline.</p><div class="stat">17 h 30 min on fast track · SLA 2 business days</div></a>
+  </div>
+
+  <footer>Drafts for discussion. Not final client commitments.</footer>
+</div>
+</body>
+</html>
