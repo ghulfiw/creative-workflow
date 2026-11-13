@@ -128,7 +128,7 @@
   <h2>Assumptions</h2>
   <ul class="a">
     <li>BAU uses the final BAU timeline: one brief, 5 video variants, 30 h.</li>
-    <li>Trendjacking uses the same steps and working times as final BAU, plus the Strategic Planner completing the brief (4 h of working time) after Account's brief prep. Both count inside the 2-day clock.</li>
+    <li>Trendjacking uses the same steps and working times as final BAU, except that Account's brief prep is not a separate step: Account and the Strategic Planner complete the brief together (4 h of working time), inside the 2-day clock.</li>
     <li>Trendjacking covers 3 video variants instead of 5: video production and content revision working times are scaled to 3/5 of BAU (3 h → 1 h 48 min, 2 h → 1 h 12 min). Reviews keep the same working time, as in BAU.</li>
     <li>Fast-track turnaround on Trendjacking: internal reviews picked up within 20 min, revisions start as soon as feedback lands, and client waits are halved (board review 1 h, content review and re-reviews 30 min). Brainstorm pickup (1 h) and video generation and rendering (1 h) are unchanged.</li>
   </ul>
@@ -140,8 +140,8 @@
 const NAVY='#1C1D4F', MSG='#55577A', OR='#C26A00';
 // label, owner, BAU [wait, work] or null, TJ [wait, work] or null, why
 const S = [
-  ['Brief prep & hand-off · Account','A',[0,1],[0,1],''],
-  ['Complete brief · Strategic Planner','A',null,[0,4],'Trendjacking only: trend insight, angle, references'],
+  ['Brief prep & hand-off · Account','A',[0,1],null,''],
+  ['Complete brief · Account + Strategic Planner','A',null,[0,4],'Trendjacking only: Account and Planner complete the brief together (trend insight, angle, references)'],
   ['Brainstorm session & script','A',[1,3],[1,3],''],
   ['AI mood board in platform','A',[0,1/3],[0,1/3],''],
   ['AI visuals revision · AD re-prompts','A',[0,2/3],[0,2/3],''],
@@ -205,11 +205,12 @@ S.forEach(([label, owner, b, t, why], i) => {
   if (b) { bar(y + 6, tb, b[0], b[1], true, label, who, ''); tb += b[0] + b[1]; }
   else o.push(`<text x="${X0 + tb * PXH + 4}" y="${y + 17}" font-size="10" fill="${MSG}" font-style="italic">not in BAU</text>`);
   if (t) { bar(y + 24, tt, t[0], t[1], false, label, who, why); tt += t[0] + t[1]; }
+  else o.push(`<text x="${X0 + tt * PXH + 4}" y="${y + 35}" font-size="10" fill="#8A4A00" font-style="italic">not a separate step in Trendjacking: done within Complete brief</text>`);
   const bt = b ? b[0] + b[1] : 0, ttt = t ? t[0] + t[1] : 0, d = ttt - bt;
   rows += `<tr><td>${label}</td><td>${who}</td>` +
     (b ? `<td class="num">${fh(b[0])}</td><td class="num">${fh(b[1])}</td><td class="num"><b>${fh(bt)}</b></td>` : '<td>–</td><td>–</td><td>–</td>') +
-    `<td class="num">${fh(t[0])}</td><td class="num">${fh(t[1])}</td><td class="num"><b>${fh(ttt)}</b></td>` +
-    `<td class="d ${d > 1e-6 ? 'up' : d < -1e-6 ? 'down' : ''}">${Math.abs(d) < 1e-6 ? 'Same' : (d > 0 ? '+' : '−') + fh(Math.abs(d))}${why ? ' · <span style="font-weight:400">' + why + '</span>' : ''}</td></tr>`;
+    (t ? `<td class="num">${fh(t[0])}</td><td class="num">${fh(t[1])}</td><td class="num"><b>${fh(ttt)}</b></td>` : '<td>–</td><td>–</td><td>–</td>') +
+    `<td class="d ${d > 1e-6 ? 'up' : d < -1e-6 ? 'down' : ''}">${Math.abs(d) < 1e-6 ? 'Same' : (d > 0 ? '+' : '−') + fh(Math.abs(d))}${why ? ' · <span style="font-weight:400">' + why + '</span>' : (!t ? ' · <span style="font-weight:400">In Trendjacking, Account preps the brief together with the Planner</span>' : '')}</td></tr>`;
 });
 const end = (h, c, txt, y, anchor) => { const x = X0 + h * PXH; o.push(`<line x1="${x}" y1="${TOP - 30}" x2="${x}" y2="${H - 44}" stroke="${c}" stroke-width="2"/>`); o.push(`<text x="${anchor === 'end' ? x - 6 : x + 6}" y="${y}" font-size="12" font-weight="700" text-anchor="${anchor || 'start'}" fill="${c}">${txt}</text>`); };
 end(tb, NAVY, 'BAU finish: ' + fh(tb), H - 28);
