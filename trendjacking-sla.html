@@ -84,7 +84,7 @@
 <a href="./" style="position:fixed;top:12px;right:16px;z-index:20;font:600 12px Poppins,system-ui,sans-serif;color:#1C1D4F;background:#F4F4F2;border-radius:999px;padding:6px 12px;text-decoration:none">← All documents</a>
 <div class="wrap">
   <h1>Draft SLA: Trendjacking</h1>
-  <p class="sub">Brief final to final approval · one 15–30-second video · same gates and reviewers as BAU · SLA 2 business days (16 working hours) · Draft v0.1 · 12 Nov 2026</p>
+  <p class="sub">Brief final to final approval · one 15–30-second video · same gates and reviewers as BAU, plus Strategic Planner brief completion · SLA 2 business days (16 working hours) · Draft v0.2 · 13 Nov 2026</p>
   <p class="key" id="keyMsg"></p>
 
   <div class="cards">
@@ -101,6 +101,7 @@
     <label class="lever"><input type="checkbox" id="lLive"><div><b>Live board review</b><span class="s">ECD, AD/AAD and the client review the board together in one session. Replaces the separate internal and client board reviews and re-reviews.</span></div></label>
     <label class="lever"><input type="checkbox" id="lSign"><div><b>Quick sign-off on revisions</b><span class="s">ECD signs off a revision in the platform (10 min) instead of a full internal re-review.</span></div></label>
     <label class="lever"><input type="checkbox" id="lPre"><div><b>Board approved before the window</b><span class="s">For planned occasions: the board is approved days ahead, so the 2-day clock covers production and content review only.</span></div></label>
+    <label class="lever"><input type="checkbox" id="lEarly"><div><b>Planner starts during clarification</b><span class="s">The Strategic Planner works on the angle while Account clarifies the brief with the client, so only 1 h of the 4 h is left after brief final.</span></div></label>
     <div class="lever slider"><b>Video production working time: <span id="prodV"></span></b><input type="range" id="lProd" min="1" max="4" step="0.5" value="2"><span class="s">2 h is the workshop estimate for a 15-second video. A 30-second video is not estimated yet.</span></div>
   </div>
 
@@ -114,7 +115,7 @@
   </div>
   <div class="chart" id="chart"></div>
   <p class="note" id="pre"></p>
-  <p class="note">Clock starts when the brief is marked final in the platform. Brief clarification is outside the SLA. Hover over a bar for its breakdown.</p>
+  <p class="note">Clock starts when Account marks the brief final in the platform. The Strategic Planner's brief completion is inside the clock. Brief clarification is outside the SLA. Hover over a bar for its breakdown.</p>
 
   <h2>Turnaround per step</h2>
   <div class="tablebox">
@@ -128,7 +129,8 @@
   <h2>What each side commits to on the fast track</h2>
   <div class="commit">
     <div class="box agency"><h3>Agency</h3><ul>
-      <li>Brainstorm (Copywriter + AD on call) starts within 1 working hour of brief final.</li>
+      <li>Strategic Planner completes the brief (trend insight, angle, references) within 4 working hours of brief final.</li>
+      <li>Brainstorm (Copywriter + AD on call) starts within 1 working hour of the completed brief.</li>
       <li>Internal reviews and re-reviews picked up within 20 minutes of the urgent alert.</li>
       <li>Revisions start as soon as feedback arrives: board 1 h, content 1 h.</li>
       <li>The platform records the SLA result. Late content is still posted.</li>
@@ -143,7 +145,8 @@
 
   <h2>Assumptions in this draft</h2>
   <ul class="a">
-    <li>2 business days = 16 working hours, from brief final to final client approval.</li>
+    <li>2 business days = 16 working hours, from brief final (by Account) to final client approval.</li>
+    <li>The Strategic Planner's brief completion (4 h, counted as working time with no waiting) is inside the clock.</li>
     <li>Same steps, gates, reviewers and working times as the BAU SLA draft, one revision at each gate.</li>
     <li>Working time is not compressed. Only waiting is.</li>
     <li>Video generation and rendering keep their 2 hours of waiting.</li>
@@ -157,6 +160,7 @@
 const NAVY='#1C1D4F', MINT='#B8E8D3', MINT_D='#2E8B67', MSG='#55577A', AG_WAIT='#C9CAE0', CL_WAIT='#E3F5EC';
 // id, label, owner, work, BAU wait, fast-track wait, phase, why
 const BASE = [
+  ['p1','Complete brief · Strategic Planner','A',4,0,0,'A',''],
   ['a1','Brainstorm session & script','A',1,3,1,'A','On-call Copywriter + AD instead of the next scheduled session'],
   ['a2','AI mood board in platform','A',1/3,0,0,'A',''],
   ['a3','AI visuals revision · AD re-prompts','A',0.5,0,0,'A',''],
@@ -176,7 +180,7 @@ const $ = id => document.getElementById(id);
 const fh = h => { const m = Math.round(h * 60); if (m === 0) return '0'; if (m < 60) return m + ' min'; const a = Math.floor(m / 60), b = m % 60; return b ? a + ' h ' + b + ' min' : a + ' h'; };
 
 function plan() {
-  const ag = $('lAg').checked, cl = $('lCl').checked, live = $('lLive').checked, sign = $('lSign').checked, pre = $('lPre').checked, prod = +$('lProd').value;
+  const ag = $('lAg').checked, cl = $('lCl').checked, live = $('lLive').checked, sign = $('lSign').checked, pre = $('lPre').checked, early = $('lEarly').checked, prod = +$('lProd').value;
   let rows = [];
   for (const [id, label, owner, work, wb, wf, ph, why] of BASE) {
     const fast = owner === 'A' ? ag : cl;
@@ -189,11 +193,14 @@ function plan() {
       {id:'l2', label:'Board revision · Copywriter + AD', owner:'A', work:1, wb:0.5, w: ag ? 0 : 0.5, ph:'A', why: ag ? 'Starts as soon as feedback lands' : '', changed:false},
       {id:'l3', label:'Client board sign-off in platform', owner:'C', work:1/6, wb:null, w:1/3, ph:'A', why:'Replaces internal + client re-reviews', changed:true});
   }
+  const pl = rows.find(r => r.id === 'p1');
+  pl.isNew = true; pl.why = 'New in trendjacking: trend insight, angle, references';
+  if (early) { pl.work = 1; pl.label = 'Finish brief · Strategic Planner'; pl.why = 'Planner starts during brief clarification; 1 h left after brief final'; }
   if (sign) for (const r of rows) if (r.id === 'a7' || r.id === 'b5') {
     r.label = r.id === 'a7' ? 'ECD sign-off on board revision' : 'ECD sign-off on content revision';
     r.work = 1/6; r.w = 0; r.why = 'Quick sign-off instead of a full re-review'; r.changed = true;
   }
-  for (const r of rows) { r.changed = r.changed || (r.wb !== null && Math.abs(r.w - r.wb) > 1e-6) || (r.id === 'b1' && prod !== 2); r.clock = !(pre && r.ph === 'A'); }
+  for (const r of rows) { r.changed = r.changed || r.isNew || (r.wb !== null && Math.abs(r.w - r.wb) > 1e-6) || (r.id === 'b1' && prod !== 2); r.clock = !(pre && r.ph === 'A'); }
   return {rows, pre, prod};
 }
 
@@ -267,10 +274,11 @@ function draw() {
   // table
   let tb = '';
   for (const r of rows) {
-    const chg = r.wb === null ? 'New step: ' + r.why.toLowerCase()
+    const chg = r.isNew ? 'New step (not in BAU)' + ($('lEarly').checked ? ' · started during clarification, saves 3 h' : '')
+      : r.wb === null ? 'New step: ' + r.why.toLowerCase()
       : r.changed ? (r.why || 'Changed') + (r.wb + (BASE.find(b => b[0] === r.id) || [0,0,0,r.work])[3] - r.w - r.work > 1e-6 ? ' · saves ' + fh(r.wb + (BASE.find(b => b[0] === r.id) || [0,0,0,r.work])[3] - r.w - r.work) : '')
       : 'Same as BAU';
-    tb += `<tr${r.clock ? '' : ' style="opacity:.45"'}><td>${r.changed ? '<span class="dot"></span>' : ''}${r.label}${r.clock ? '' : ' (before the window)'}</td><td>${r.owner === 'A' ? 'Agency' : 'Client'}</td><td class="num">${fh(r.work)}</td><td class="num">${r.wb === null ? '–' : fh(r.wb)}</td><td class="num">${fh(r.w)}</td><td class="num"><b>${fh(r.w + r.work)}</b></td><td class="${r.changed ? 'chg' : 'same'}">${chg}</td></tr>`;
+    tb += `<tr${r.clock ? '' : ' style="opacity:.45"'}><td>${r.changed ? '<span class="dot"></span>' : ''}${r.label}${r.clock ? '' : ' (before the window)'}</td><td>${r.owner === 'A' ? 'Agency' : 'Client'}</td><td class="num">${fh(r.work)}</td><td class="num">${r.wb === null || r.isNew ? '–' : fh(r.wb)}</td><td class="num">${fh(r.w)}</td><td class="num"><b>${fh(r.w + r.work)}</b></td><td class="${r.changed ? 'chg' : 'same'}">${chg}</td></tr>`;
   }
   $('tb').innerHTML = tb;
   $('fK').textContent = fh(K); $('fW').textContent = fh(W); $('fT').textContent = fh(T);
@@ -289,7 +297,7 @@ function showTip(g, x, y) {
   tip.style.left = Math.min(x + 14, innerWidth - r.width - 8) + 'px';
   tip.style.top = (y + 16 + r.height > innerHeight ? y - r.height - 12 : y + 16) + 'px';
 }
-['lAg','lCl','lLive','lSign','lPre'].forEach(id => $(id).onchange = draw);
+['lAg','lCl','lLive','lSign','lPre','lEarly'].forEach(id => $(id).onchange = draw);
 $('lProd').oninput = draw;
 draw();
 </script>
