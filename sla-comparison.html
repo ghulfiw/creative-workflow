@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SLA comparison · BAU vs Trendjacking</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --navy:#1C1D4F; --mint:#B8E8D3; --mintd:#2E8B67; --grey:#F4F4F2; --msg:#55577A; --amber:#FBE3C4; --amberd:#6B3B00; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Poppins, system-ui, sans-serif; color:var(--navy); background:#fff; }
+  .wrap { max-width:1440px; margin:0 auto; padding:28px 32px 40px; }
+  h1 { margin:0; font-size:28px; font-weight:700; }
+  .sub { margin:4px 0 0; font-size:15px; color:var(--msg); }
+  .key { margin:14px 0 0; font-size:15px; font-weight:600; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px; margin:22px 0 8px; }
+  .card { background:var(--grey); border-radius:14px; padding:16px 18px; }
+  .card .lbl { font-size:12px; color:var(--msg); }
+  .card .big { font-size:30px; font-weight:700; margin-top:2px; }
+  .card .small { font-size:12.5px; margin-top:4px; line-height:1.5; }
+  .card.ok { background:#E8F7F0; }
+  h2 { font-size:19px; margin:32px 0 10px; }
+  .legend { display:flex; gap:18px; font-size:12.5px; flex-wrap:wrap; margin-bottom:10px; }
+  .sw { display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:-2px; margin-right:6px; }
+  .chart { border:1px solid #E3E3EA; border-radius:14px; overflow-x:auto; padding:8px 0; }
+  .chart svg { display:block; }
+  .note { font-size:12.5px; color:var(--msg); margin-top:8px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; font-size:11.5px; color:var(--msg); font-weight:600; padding:8px 10px; border-bottom:1.5px solid #E3E3EA; }
+  td { padding:9px 10px; border-bottom:1px solid #EFEFF3; vertical-align:top; }
+  td.num { white-space:nowrap; }
+  tfoot td { font-weight:700; border-top:1.5px solid #E3E3EA; }
+  .tablebox { overflow-x:auto; }
+  .commit { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:12px; }
+  .box { border:1.5px solid #E3E3EA; border-radius:14px; padding:16px 18px; font-size:13px; line-height:1.6; }
+  .box h3 { margin:0 0 6px; font-size:15px; }
+  .box ul { margin:0; padding-left:18px; }
+  .box.client { border-color:var(--mintd); }
+  .box.agency { border-color:var(--navy); }
+  .challenge { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px; }
+  .ch { background:var(--grey); border-radius:12px; padding:14px 16px; font-size:13px; line-height:1.55; }
+  .ch b { display:block; font-size:13.5px; margin-bottom:4px; }
+  .calc { display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; background:#fff; border:1.5px solid var(--navy); border-radius:14px; padding:18px; margin-top:14px; }
+  .calc label { display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:600; min-width:220px; }
+  .calc input[type=range] { width:220px; }
+  .calc .out { flex:1 1 320px; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; }
+  .calc .o { background:var(--grey); border-radius:12px; padding:12px; }
+  .calc .o .lbl { font-size:11.5px; color:var(--msg); }
+  .calc .o .v { font-size:22px; font-weight:700; }
+  .scale { margin-top:14px; }
+  .scale td.n, .scale th.n { text-align:right; white-space:nowrap; }
+  .scale tr.fixed td { color:var(--msg); }
+  .scale td.chg { background:#E8F7F0; font-weight:700; color:#1F6B4D; }
+  .scale .delta { font-size:11px; font-weight:600; color:#1F6B4D; display:block; }
+  .scale .how { font-size:12px; color:var(--msg); }
+  .pill { display:inline-block; font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px; }
+  ul.a { margin:0; padding-left:18px; font-size:13px; line-height:1.7; }
+  .bar { cursor:pointer; outline:none; }
+  .bar:hover .seg, .bar:focus .seg { stroke-width:2; filter:brightness(0.96); }
+  #tip { position:fixed; z-index:10; pointer-events:none; display:none; background:#1C1D4F; color:#fff; border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.5; box-shadow:0 6px 18px rgba(28,29,79,.25); min-width:210px; }
+  #tip .w { margin-top:4px; font-size:11.5px; color:#FBE3C4; max-width:260px; }
+  #tip b { display:block; font-size:12.5px; margin-bottom:4px; }
+  #tip .r { display:flex; justify-content:space-between; gap:16px; }
+  #tip .r span:first-child { opacity:.75; }
+  #tip .t { border-top:1px solid rgba(255,255,255,.25); margin-top:4px; padding-top:4px; font-weight:600; }
+  footer { margin-top:30px; font-size:12px; color:var(--msg); }
+
+  .card.over { background:#FBE3C4; }
+  .levers { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:10px; margin:6px 0 14px; }
+  .lever { display:flex; gap:10px; align-items:flex-start; background:var(--grey); border-radius:12px; padding:12px 14px; font-size:13px; line-height:1.45; cursor:pointer; }
+  .lever input { margin-top:3px; accent-color:#1C1D4F; }
+  .lever b { display:block; font-size:13px; }
+  .lever span.s { color:var(--msg); font-size:12px; }
+  .lever.slider { cursor:default; flex-direction:column; gap:4px; }
+  .lever.slider input { width:100%; }
+  td.chg { color:#8A4A00; font-weight:600; }
+  td.same { color:var(--msg); }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#C26A00; margin-right:6px; vertical-align:1px; }
+  #pre { display:none; }
+
+  .card.bau { border-left:5px solid #1C1D4F; }
+  .card.tj { border-left:5px solid #C26A00; }
+  .card.over { background:#FBE3C4; }
+  td.d { white-space:nowrap; font-weight:600; }
+  td.d.up { color:#8A4A00; } td.d.down { color:#1F6B4D; }
+  th.grp { text-align:center; border-bottom:none; }
+  .sub2 { font-size:11px; color:var(--msg); font-weight:500; }
+</style>
+</head>
+<body>
+<a href="./" style="position:fixed;top:12px;right:16px;z-index:20;font:600 12px Poppins,system-ui,sans-serif;color:#1C1D4F;background:#F4F4F2;border-radius:999px;padding:6px 12px;text-decoration:none">← All documents</a>
+<div class="wrap">
+  <h1>SLA comparison: BAU vs Trendjacking</h1>
+  <p class="sub">Brief final to final approval · one revision at each gate · 1 business day = 8 working hours · Draft · 13 Nov 2026</p>
+  <p class="key" id="keyMsg"></p>
+
+  <div class="cards">
+    <div class="card bau ok"><div class="lbl">BAU · 5 video variants · SLA 5 business days</div><div class="big" id="bTot"></div><div class="small" id="bSub"></div></div>
+    <div class="card tj" id="tCard"><div class="lbl">Trendjacking · 3 video variants · SLA 2 business days</div><div class="big" id="tTot"></div><div class="small" id="tSub"></div></div>
+    <div class="card"><div class="lbl">Hands-on work · BAU vs Trendjacking</div><div class="big" id="work" style="font-size:22px;line-height:1.35"></div><div class="small" id="workSub"></div></div>
+    <div class="card"><div class="lbl">Waiting · BAU vs Trendjacking</div><div class="big" id="wait" style="font-size:22px;line-height:1.35"></div><div class="small">Trendjacking uses fast-track turnaround on both sides.</div></div>
+  </div>
+
+  <h2>Timelines side by side</h2>
+  <div class="legend">
+    <span><span class="sw" style="background:#1C1D4F"></span>BAU working</span>
+    <span><span class="sw" style="background:#C9CAE0;border:1px solid #1C1D4F"></span>BAU waiting</span>
+    <span><span class="sw" style="background:#C26A00"></span>Trendjacking working</span>
+    <span><span class="sw" style="background:#FBE3C4;border:1px solid #C26A00"></span>Trendjacking waiting</span>
+    <span>Client steps are marked “· client”</span>
+  </div>
+  <div class="chart" id="chart"></div>
+  <p class="note">Each row is one step. The upper bar is BAU, the lower bar is Trendjacking, each on its own clock from brief final. Hover over a bar for its breakdown.</p>
+
+  <h2>Step by step</h2>
+  <div class="tablebox">
+  <table>
+    <thead>
+      <tr><th></th><th></th><th class="grp" colspan="3">BAU · 5 variants</th><th class="grp" colspan="3">Trendjacking · 3 variants</th><th></th></tr>
+      <tr><th>Step</th><th>Owner</th><th>Waiting</th><th>Working</th><th>Total</th><th>Waiting</th><th>Working</th><th>Total</th><th>Difference · why</th></tr>
+    </thead>
+    <tbody id="tb"></tbody>
+    <tfoot><tr><td>Total</td><td></td><td id="fBW"></td><td id="fBK"></td><td id="fBT"></td><td id="fTW"></td><td id="fTK"></td><td id="fTT"></td><td id="fD"></td></tr></tfoot>
+  </table>
+  </div>
+
+  <h2>Assumptions</h2>
+  <ul class="a">
+    <li>BAU uses the final BAU timeline: one brief, 5 video variants, 30 h.</li>
+    <li>Trendjacking uses the same steps and working times as final BAU, plus the Strategic Planner completing the brief (4 h of working time) after Account's brief prep. Both count inside the 2-day clock.</li>
+    <li>Trendjacking covers 3 video variants instead of 5: video production and content revision working times are scaled to 3/5 of BAU (3 h → 1 h 48 min, 2 h → 1 h 12 min). Reviews keep the same working time, as in BAU.</li>
+    <li>Fast-track turnaround on Trendjacking: internal reviews picked up within 20 min, revisions start as soon as feedback lands, and client waits are halved (board review 1 h, content review and re-reviews 30 min). Brainstorm pickup (1 h) and video generation and rendering (1 h) are unchanged.</li>
+  </ul>
+
+  <footer>Sources: <a href="bau-sla.html">BAU SLA (final timeline)</a> · <a href="trendjacking-sla.html">Trendjacking SLA draft</a> · answers from Ghulfi, 13 Nov 2026.</footer>
+</div>
+<div id="tip"></div>
+<script>
+const NAVY='#1C1D4F', MSG='#55577A', OR='#C26A00';
+// label, owner, BAU [wait, work] or null, TJ [wait, work] or null, why
+const S = [
+  ['Brief prep & hand-off · Account','A',[0,1],[0,1],''],
+  ['Complete brief · Strategic Planner','A',null,[0,4],'Trendjacking only: trend insight, angle, references'],
+  ['Brainstorm session & script','A',[1,3],[1,3],''],
+  ['AI mood board in platform','A',[0,1/3],[0,1/3],''],
+  ['AI visuals revision · AD re-prompts','A',[0,2/3],[0,2/3],''],
+  ['Internal board review · ECD, AD/AAD','A',[2/3,1],[1/3,1],'Picked up within 20 min'],
+  ['Client board review','C',[2,1],[1,1],'Client opens within 1 h instead of 2 h'],
+  ['Board revision · Copywriter + AD','A',[0.5,1],[0,1],'Starts as soon as feedback lands'],
+  ['Internal re-review (board)','A',[2/3,1],[1/3,1],'Picked up within 20 min'],
+  ['Client re-review (board)','C',[1,1],[0.5,1],'Client opens within 30 min instead of 1 h'],
+  ['Video production · Flow, AE, Suno','A',[1,3],[1,1.8],'3 variants instead of 5'],
+  ['Internal content review · ECD, CGH, AD/AAD, AM','A',[1,1],[1/3,1],'Picked up within 20 min'],
+  ['Client content review','C',[1,1],[0.5,1],'Client opens within 30 min instead of 1 h'],
+  ['Content revision','A',[1,2],[0,1.2],'3 variants, starts as soon as feedback lands'],
+  ['Internal re-review (content)','A',[2/3,0.5],[1/3,0.5],'Picked up within 20 min'],
+  ['Client re-review & final approval','C',[1,1],[0.5,1],'Client opens within 30 min instead of 1 h'],
+];
+const $ = id => document.getElementById(id);
+const fh = h => { const m = Math.round(h * 60); if (m === 0) return '0'; if (m < 60) return m + ' min'; const a = Math.floor(m / 60), b = m % 60; return b ? a + ' h ' + b + ' min' : a + ' h'; };
+const sum = (k, i) => S.reduce((a, r) => a + (r[k] ? r[k][i] : 0), 0);
+const BW = sum(2,0), BK = sum(2,1), TW = sum(3,0), TK = sum(3,1), BT = BW + BK, TT = TW + TK;
+
+$('bTot').textContent = fh(BT);
+$('bSub').textContent = (BT / 8).toFixed(1) + ' business days · ' + fh(40 - BT) + ' of buffer.';
+$('tTot').textContent = fh(TT);
+$('tCard').className = 'card tj ' + (TT <= 16 ? 'ok' : 'over');
+$('tSub').textContent = (TT / 8).toFixed(1) + ' business days · ' + (TT <= 16 ? fh(16 - TT) + ' of buffer.' : fh(TT - 16) + ' over the 16-hour SLA.');
+$('work').textContent = fh(BK) + ' / ' + fh(TK);
+$('workSub').textContent = TK > 16 ? 'Trendjacking hands-on work alone is ' + fh(TK - 16) + ' more than 16 working hours.' : 'Trendjacking hands-on work fits within 16 working hours.';
+$('wait').textContent = fh(BW) + ' / ' + fh(TW);
+$('keyMsg').textContent = 'BAU finishes in ' + fh(BT) + ' against 40 h. Trendjacking finishes in ' + fh(TT) + ' against 16 h, so it misses its SLA by ' + fh(TT - 16) + '. Its hands-on work alone (' + fh(TK) + ') is more than 16 hours, so faster turnaround cannot close the gap.';
+
+// chart
+const PXH = 23, X0 = 330, ROW = 46, TOP = 96, HOURS = 40;
+const Wd = X0 + HOURS * PXH + 110, H = TOP + S.length * ROW + 56;
+let o = [];
+for (let d = 0; d <= HOURS / 8; d++) {
+  const x = X0 + d * 8 * PXH;
+  o.push(`<line x1="${x}" y1="${TOP - 30}" x2="${x}" y2="${H - 44}" stroke="#C9CAD3" stroke-width="1.2"/>`);
+  if (d < HOURS / 8) o.push(`<text x="${x + 4 * PXH}" y="${TOP - 40}" font-size="12" font-weight="600" text-anchor="middle" fill="${NAVY}">Day ${d + 1}</text>`);
+}
+for (let h = 0; h <= HOURS; h++) if (h % 8) o.push(`<line x1="${X0 + h * PXH}" y1="${TOP - 14}" x2="${X0 + h * PXH}" y2="${H - 44}" stroke="#EFEFF3"/>`);
+for (let h = 0; h <= HOURS; h += 2) o.push(`<text x="${X0 + h * PXH}" y="${TOP - 18}" font-size="10" text-anchor="middle" fill="${MSG}">${h} h</text>`);
+const sl = (h, c, txt, dy) => { const x = X0 + h * PXH; o.push(`<line x1="${x}" y1="${TOP - 66 + dy}" x2="${x}" y2="${H - 44}" stroke="${c}" stroke-width="2" stroke-dasharray="6 4"/>`); o.push(`<text x="${x - 6}" y="${TOP - 62 + dy}" font-size="11.5" font-weight="600" text-anchor="end" fill="${c}">${txt}</text>`); };
+sl(16, OR, 'Trendjacking SLA: 2 business days (16 h)', 0);
+sl(40, NAVY, 'BAU SLA: 5 business days (40 h)', 0);
+let tb = 0, tt = 0, rows = '';
+const bar = (y, t, w, k, isB, label, who, why) => {
+  const [wc, kc, st] = isB ? ['#C9CAE0', NAVY, NAVY] : ['#FBE3C4', OR, OR];
+  const xw = X0 + t * PXH, ww = w * PXH, xk = xw + ww, wk = Math.max(k * PXH, 3);
+  const d1 = Math.floor(t / 8) + 1, d2 = Math.floor((t + w + k - 1e-6) / 8) + 1;
+  const data = JSON.stringify({step: (isB ? 'BAU · ' : 'Trendjacking · ') + label, who, wait: fh(w), work: fh(k), total: fh(w + k), from: t ? fh(t) : '0 h', to: fh(t + w + k), day: 'Day ' + d1 + (d1 === d2 ? '' : '–' + d2), why}).replace(/"/g, '&quot;');
+  o.push(`<g class="bar" data-tip="${data}" tabindex="0">`);
+  if (ww > 0) o.push(`<rect class="seg" x="${xw}" y="${y}" width="${ww}" height="14" fill="${wc}" stroke="${st}" stroke-width="0.8" rx="3"/>`);
+  o.push(`<rect class="seg" x="${xk}" y="${y}" width="${wk}" height="14" fill="${kc}" stroke="${st}" stroke-width="0.8" rx="3"/>`);
+  o.push(`<text x="${xk + wk + 6}" y="${y + 11}" font-size="10" fill="${isB ? NAVY : '#8A4A00'}">${fh(w + k)}</text>`);
+  o.push(`<rect x="${xw}" y="${y - 2}" width="${ww + wk + 60}" height="18" fill="transparent"/></g>`);
+};
+S.forEach(([label, owner, b, t, why], i) => {
+  const y = TOP + i * ROW, who = owner === 'A' ? 'Agency' : 'Client';
+  if (i % 2) o.push(`<rect x="8" y="${y + 2}" width="${Wd - 16}" height="${ROW - 4}" fill="#FAFAF8" rx="6"/>`);
+  o.push(`<text x="${X0 - 14}" y="${y + 21}" font-size="12" text-anchor="end" fill="${NAVY}">${label}${owner === 'C' ? ' <tspan fill="#2E8B67" font-weight="600">· client</tspan>' : ''}</text>`);
+  if (b) { bar(y + 6, tb, b[0], b[1], true, label, who, ''); tb += b[0] + b[1]; }
+  else o.push(`<text x="${X0 + tb * PXH + 4}" y="${y + 17}" font-size="10" fill="${MSG}" font-style="italic">not in BAU</text>`);
+  if (t) { bar(y + 24, tt, t[0], t[1], false, label, who, why); tt += t[0] + t[1]; }
+  const bt = b ? b[0] + b[1] : 0, ttt = t ? t[0] + t[1] : 0, d = ttt - bt;
+  rows += `<tr><td>${label}</td><td>${who}</td>` +
+    (b ? `<td class="num">${fh(b[0])}</td><td class="num">${fh(b[1])}</td><td class="num"><b>${fh(bt)}</b></td>` : '<td>–</td><td>–</td><td>–</td>') +
+    `<td class="num">${fh(t[0])}</td><td class="num">${fh(t[1])}</td><td class="num"><b>${fh(ttt)}</b></td>` +
+    `<td class="d ${d > 1e-6 ? 'up' : d < -1e-6 ? 'down' : ''}">${Math.abs(d) < 1e-6 ? 'Same' : (d > 0 ? '+' : '−') + fh(Math.abs(d))}${why ? ' · <span style="font-weight:400">' + why + '</span>' : ''}</td></tr>`;
+});
+const end = (h, c, txt, y, anchor) => { const x = X0 + h * PXH; o.push(`<line x1="${x}" y1="${TOP - 30}" x2="${x}" y2="${H - 44}" stroke="${c}" stroke-width="2"/>`); o.push(`<text x="${anchor === 'end' ? x - 6 : x + 6}" y="${y}" font-size="12" font-weight="700" text-anchor="${anchor || 'start'}" fill="${c}">${txt}</text>`); };
+end(tb, NAVY, 'BAU finish: ' + fh(tb), H - 28);
+end(tt, OR, 'Trendjacking finish: ' + fh(tt), H - 28, 'end');
+$('chart').innerHTML = `<svg viewBox="0 0 ${Wd} ${H}" width="${Wd}" height="${H}" role="img" aria-label="BAU finishes at ${fh(BT)} against a 40-hour SLA; Trendjacking finishes at ${fh(TT)} against a 16-hour SLA" font-family="Poppins, system-ui, sans-serif">${o.join('')}</svg>`;
+$('tb').innerHTML = rows;
+$('fBW').textContent = fh(BW); $('fBK').textContent = fh(BK); $('fBT').textContent = fh(BT);
+$('fTW').textContent = fh(TW); $('fTK').textContent = fh(TK); $('fTT').textContent = fh(TT);
+$('fD').textContent = (TT > BT ? '+' : '−') + fh(Math.abs(TT - BT));
+
+const tip = $('tip');
+function showTip(g, x, y) {
+  const d = JSON.parse(g.dataset.tip);
+  tip.innerHTML = '<b></b><div class="r"><span>Waiting</span><span></span></div><div class="r"><span>Working</span><span></span></div><div class="r t"><span>Total</span><span></span></div><div class="r"><span>Clock</span><span></span></div><div class="w"></div>';
+  const s = tip.querySelectorAll('b, .r span:last-child');
+  s[0].textContent = d.step + ' · ' + d.who;
+  s[1].textContent = d.wait; s[2].textContent = d.work; s[3].textContent = d.total;
+  s[4].textContent = d.from + ' → ' + d.to + ' (' + d.day + ')';
+  tip.querySelector('.w').textContent = d.why ? 'vs BAU: ' + d.why : '';
+  tip.style.display = 'block';
+  const r = tip.getBoundingClientRect();
+  tip.style.left = Math.min(x + 14, innerWidth - r.width - 8) + 'px';
+  tip.style.top = (y + 16 + r.height > innerHeight ? y - r.height - 12 : y + 16) + 'px';
+}
+document.querySelectorAll('.bar').forEach(g => {
+  g.addEventListener('mousemove', e => showTip(g, e.clientX, e.clientY));
+  g.addEventListener('mouseleave', () => tip.style.display = 'none');
+  g.addEventListener('focus', () => { const b = g.getBoundingClientRect(); showTip(g, b.left, b.bottom - 8); });
+  g.addEventListener('blur', () => tip.style.display = 'none');
+});
+</script>
+</body>
+</html>
