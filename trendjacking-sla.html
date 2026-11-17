@@ -59,247 +59,109 @@
   .bar { cursor:pointer; outline:none; }
   .bar:hover .seg, .bar:focus .seg { stroke-width:2; filter:brightness(0.96); }
   #tip { position:fixed; z-index:10; pointer-events:none; display:none; background:#1C1D4F; color:#fff; border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.5; box-shadow:0 6px 18px rgba(28,29,79,.25); min-width:210px; }
-  #tip .w { margin-top:4px; font-size:11.5px; color:#FBE3C4; max-width:260px; }
   #tip b { display:block; font-size:12.5px; margin-bottom:4px; }
   #tip .r { display:flex; justify-content:space-between; gap:16px; }
   #tip .r span:first-child { opacity:.75; }
   #tip .t { border-top:1px solid rgba(255,255,255,.25); margin-top:4px; padding-top:4px; font-weight:600; }
   footer { margin-top:30px; font-size:12px; color:var(--msg); }
-
-  .card.over { background:#FBE3C4; }
-  .levers { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:10px; margin:6px 0 14px; }
-  .lever { display:flex; gap:10px; align-items:flex-start; background:var(--grey); border-radius:12px; padding:12px 14px; font-size:13px; line-height:1.45; cursor:pointer; }
-  .lever input { margin-top:3px; accent-color:#1C1D4F; }
-  .lever b { display:block; font-size:13px; }
-  .lever span.s { color:var(--msg); font-size:12px; }
-  .lever.slider { cursor:default; flex-direction:column; gap:4px; }
-  .lever.slider input { width:100%; }
-  td.chg { color:#8A4A00; font-weight:600; }
-  td.same { color:var(--msg); }
-  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#C26A00; margin-right:6px; vertical-align:1px; }
-  #pre { display:none; }
 </style>
 </head>
 <body>
 <a href="./" style="position:fixed;top:12px;right:16px;z-index:20;font:600 12px Poppins,system-ui,sans-serif;color:#1C1D4F;background:#F4F4F2;border-radius:999px;padding:6px 12px;text-decoration:none">← All documents</a>
 <div class="wrap">
-  <h1>Draft SLA: Trendjacking</h1>
-  <p class="sub">Brief final to final approval · one 15–30-second video · same gates and reviewers as BAU, plus Strategic Planner brief completion · SLA 2 business days (16 working hours) · Draft v0.2 · 13 Nov 2026</p>
-  <p class="key" id="keyMsg"></p>
+  <h1>Draft SLA: trendjacking, brief final to completion</h1>
+  <p class="sub">One brief, 3 short-form 15-second videos · trendjacking workflow · 1 business day = 8 working hours · Draft v3 · 17 Nov 2026</p>
+  <p class="key">One trendjacking brief with 3 short-form videos is planned at 17 h 30 min, inside the 3-business-day SLA with 6 h 30 min to spare.</p>
 
   <div class="cards">
-    <div class="card" id="cTot"><div class="lbl">Planned elapsed time</div><div class="big" id="vTot"></div><div class="small" id="sTot"></div></div>
-    <div class="card"><div class="lbl">Against the 2-BD SLA (16 h)</div><div class="big" id="vGap"></div><div class="small" id="sGap"></div></div>
-    <div class="card"><div class="lbl">Hands-on work vs waiting</div><div class="big" id="vWW" style="font-size:22px;line-height:1.35"></div><div class="small">Fast-track turnaround cuts waiting only. Live review and quick sign-off also change working time.</div></div>
-    <div class="card"><div class="lbl">Saved vs BAU timing</div><div class="big" id="vSav"></div><div class="small" id="sSav"></div></div>
+    <div class="card ok"><div class="lbl">Planned elapsed time</div><div class="big">17 h 30 min</div><div class="small">2.2 business days, inside the 24-hour SLA with 6 h 30 min of buffer.</div></div>
+    <div class="card"><div class="lbl">With the agency</div><div class="big">14 h</div><div class="small">Brief prep, Planner brief completion, AI script and images, production, revisions and internal reviews.</div></div>
+    <div class="card"><div class="lbl">With the client</div><div class="big">3 h 30 min</div><div class="small">One round of board feedback (2 h) and content review (1 h 30 min).</div></div>
+    <div class="card"><div class="lbl">Hands-on work vs waiting</div><div class="big">13.3 h / 4.2 h</div><div class="small">Waiting covers pick-up time, rendering and the client opening a review.</div></div>
   </div>
 
-  <h2>Simulate the plan</h2>
-  <div class="levers">
-    <label class="lever"><input type="checkbox" id="lAg" checked><div><b>Fast-track turnaround · agency</b><span class="s">On-call brainstorm within 1 h, internal reviews picked up within 20 min, revisions start as soon as feedback lands.</span></div></label>
-    <label class="lever"><input type="checkbox" id="lCl" checked><div><b>Fast-track turnaround · client</b><span class="s">First reviews within 2 h instead of 4 h, re-reviews within 1 h instead of 2 h. Needs the client's agreement.</span></div></label>
-    <label class="lever"><input type="checkbox" id="lLive"><div><b>Live board review</b><span class="s">ECD, AD/AAD and the client review the board together in one session. Replaces the separate internal and client board reviews and re-reviews.</span></div></label>
-    <label class="lever"><input type="checkbox" id="lSign"><div><b>Quick sign-off on revisions</b><span class="s">ECD signs off a revision in the platform (10 min) instead of a full internal re-review.</span></div></label>
-    <label class="lever"><input type="checkbox" id="lPre"><div><b>Board approved before the window</b><span class="s">For planned occasions: the board is approved days ahead, so the 2-day clock covers production and content review only.</span></div></label>
-    <label class="lever"><input type="checkbox" id="lEarly"><div><b>Planner starts during clarification</b><span class="s">The Strategic Planner works on the angle while Account clarifies the brief with the client, so only 1 h of the 4 h is left after brief final.</span></div></label>
-    <div class="lever slider"><b>Video production working time: <span id="prodV"></span></b><input type="range" id="lProd" min="1" max="4" step="0.5" value="2"><span class="s">2 h is the workshop estimate for a 15-second video. A 30-second video is not estimated yet.</span></div>
-  </div>
-
-  <h2>Timeline for one video</h2>
+  <h2>Timeline for one brief (3 short-form videos)</h2>
   <div class="legend">
     <span><span class="sw" style="background:#1C1D4F"></span>Agency working</span>
     <span><span class="sw" style="background:#C9CAE0;border:1px solid #1C1D4F"></span>Agency waiting</span>
     <span><span class="sw" style="background:#B8E8D3;border:1px solid #2E8B67"></span>Client working</span>
     <span><span class="sw" style="background:#E3F5EC;border:1px solid #2E8B67"></span>Client waiting</span>
-    <span><span class="dot"></span>Compressed or changed vs BAU</span>
+    
   </div>
-  <div class="chart" id="chart"></div>
-  <p class="note" id="pre"></p>
-  <p class="note">Clock starts when Account marks the brief final in the platform. The Strategic Planner's brief completion is inside the clock. Brief clarification is outside the SLA. Hover over a bar for its breakdown.</p>
+  <div class="chart"><svg viewBox="0 0 1312 590" width="1312" height="590" role="img" aria-label="One trendjacking brief with 3 short-form videos finishes at 17 h 30 min of working time, inside the 24-hour SLA" font-family="Poppins, system-ui, sans-serif"><line x1="320" y1="70" x2="320" y2="550" stroke="#C9CAD3" stroke-width="1.2"/><text x="472.0" y="60" font-size="12" font-weight="600" text-anchor="middle" fill="#1C1D4F">Day 1</text><line x1="624" y1="70" x2="624" y2="550" stroke="#C9CAD3" stroke-width="1.2"/><text x="776.0" y="60" font-size="12" font-weight="600" text-anchor="middle" fill="#1C1D4F">Day 2</text><line x1="928" y1="70" x2="928" y2="550" stroke="#C9CAD3" stroke-width="1.2"/><text x="1080.0" y="60" font-size="12" font-weight="600" text-anchor="middle" fill="#1C1D4F">Day 3</text><line x1="1232" y1="70" x2="1232" y2="550" stroke="#C9CAD3" stroke-width="1.2"/><line x1="396" y1="86" x2="396" y2="550" stroke="#EFEFF3"/><line x1="472" y1="86" x2="472" y2="550" stroke="#EFEFF3"/><line x1="548" y1="86" x2="548" y2="550" stroke="#EFEFF3"/><line x1="700" y1="86" x2="700" y2="550" stroke="#EFEFF3"/><line x1="776" y1="86" x2="776" y2="550" stroke="#EFEFF3"/><line x1="852" y1="86" x2="852" y2="550" stroke="#EFEFF3"/><line x1="1004" y1="86" x2="1004" y2="550" stroke="#EFEFF3"/><line x1="1080" y1="86" x2="1080" y2="550" stroke="#EFEFF3"/><line x1="1156" y1="86" x2="1156" y2="550" stroke="#EFEFF3"/><text x="320" y="82" font-size="10" text-anchor="middle" fill="#55577A">0 h</text><text x="396" y="82" font-size="10" text-anchor="middle" fill="#55577A">2 h</text><text x="472" y="82" font-size="10" text-anchor="middle" fill="#55577A">4 h</text><text x="548" y="82" font-size="10" text-anchor="middle" fill="#55577A">6 h</text><text x="624" y="82" font-size="10" text-anchor="middle" fill="#55577A">8 h</text><text x="700" y="82" font-size="10" text-anchor="middle" fill="#55577A">10 h</text><text x="776" y="82" font-size="10" text-anchor="middle" fill="#55577A">12 h</text><text x="852" y="82" font-size="10" text-anchor="middle" fill="#55577A">14 h</text><text x="928" y="82" font-size="10" text-anchor="middle" fill="#55577A">16 h</text><text x="1004" y="82" font-size="10" text-anchor="middle" fill="#55577A">18 h</text><text x="1080" y="82" font-size="10" text-anchor="middle" fill="#55577A">20 h</text><text x="1156" y="82" font-size="10" text-anchor="middle" fill="#55577A">22 h</text><text x="1232" y="82" font-size="10" text-anchor="middle" fill="#55577A">24 h</text><rect x="985.0" y="70" width="247.0" height="480" fill="#FBE3C4" opacity="0.35"/><line x1="1232" y1="38" x2="1232" y2="550" stroke="#C26A00" stroke-width="2" stroke-dasharray="6 4"/><text x="1226" y="42" font-size="11.5" font-weight="600" text-anchor="end" fill="#8A4A00">SLA: 3 business days (24 working hours)</text><text x="306" y="123" font-size="12" text-anchor="end" fill="#1C1D4F">Brief prep &amp; hand-off · Account</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Brief prep &amp; hand-off \u00b7 Account&quot;, &quot;who&quot;: &quot;Agency&quot;, &quot;wait&quot;: &quot;0&quot;, &quot;work&quot;: &quot;1 h&quot;, &quot;total&quot;: &quot;1 h&quot;, &quot;from&quot;: &quot;0 h&quot;, &quot;to&quot;: &quot;1 h&quot;, &quot;day&quot;: &quot;Day 1&quot;}" tabindex="0"><title>Brief prep &amp; hand-off · Account: waiting 0, working 1 h, total 1 h</title><rect class="seg" x="320.0" y="108" width="38" height="24" fill="#1C1D4F" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><text x="366.0" y="124" font-size="11" fill="#55577A">1 h</text><rect x="320.0" y="104" width="108" height="32" fill="transparent"/></g><text x="306" y="163" font-size="12" text-anchor="end" fill="#1C1D4F">Complete brief · Strategic Planner</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Complete brief \u00b7 Strategic Planner&quot;, &quot;who&quot;: &quot;Agency&quot;, &quot;wait&quot;: &quot;0&quot;, &quot;work&quot;: &quot;2 h&quot;, &quot;total&quot;: &quot;2 h&quot;, &quot;from&quot;: &quot;1 h&quot;, &quot;to&quot;: &quot;3 h&quot;, &quot;day&quot;: &quot;Day 1&quot;}" tabindex="0"><title>Complete brief · Strategic Planner: waiting 0, working 2 h, total 2 h</title><rect class="seg" x="358.0" y="148" width="76" height="24" fill="#1C1D4F" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><text x="442.0" y="164" font-size="11" fill="#55577A">2 h</text><rect x="358.0" y="144" width="146" height="32" fill="transparent"/></g><text x="306" y="203" font-size="12" text-anchor="end" fill="#1C1D4F">Script + still images · Copywriter, AD + AI</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Script + still images \u00b7 Copywriter, AD + AI&quot;, &quot;who&quot;: &quot;Agency&quot;, &quot;wait&quot;: &quot;0&quot;, &quot;work&quot;: &quot;2 h&quot;, &quot;total&quot;: &quot;2 h&quot;, &quot;from&quot;: &quot;3 h&quot;, &quot;to&quot;: &quot;5 h&quot;, &quot;day&quot;: &quot;Day 1&quot;}" tabindex="0"><title>Script + still images · Copywriter, AD + AI: waiting 0, working 2 h, total 2 h</title><rect class="seg" x="434.0" y="188" width="76" height="24" fill="#1C1D4F" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><text x="518.0" y="204" font-size="11" fill="#55577A">2 h</text><rect x="434.0" y="184" width="146" height="32" fill="transparent"/></g><text x="306" y="243" font-size="12" text-anchor="end" fill="#1C1D4F">Internal board review · ECD, AD/AAD</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Internal board review \u00b7 ECD, AD/AAD&quot;, &quot;who&quot;: &quot;Agency&quot;, &quot;wait&quot;: &quot;20 min&quot;, &quot;work&quot;: &quot;30 min&quot;, &quot;total&quot;: &quot;50 min&quot;, &quot;from&quot;: &quot;5 h&quot;, &quot;to&quot;: &quot;5 h 50 min&quot;, &quot;day&quot;: &quot;Day 1&quot;}" tabindex="0"><title>Internal board review · ECD, AD/AAD: waiting 20 min, working 30 min, total 50 min</title><rect class="seg" x="510.0" y="228" width="12.666666666666666" height="24" fill="#C9CAE0" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><rect class="seg" x="522.6666666666666" y="228" width="19.0" height="24" fill="#1C1D4F" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><text x="549.6666666666666" y="244" font-size="11" fill="#55577A">50 min</text><rect x="510.0" y="224" width="101.66666666666666" height="32" fill="transparent"/></g><text x="306" y="283" font-size="12" text-anchor="end" fill="#1C1D4F">Client board feedback</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Client board feedback&quot;, &quot;who&quot;: &quot;Client&quot;, &quot;wait&quot;: &quot;1 h&quot;, &quot;work&quot;: &quot;1 h&quot;, &quot;total&quot;: &quot;2 h&quot;, &quot;from&quot;: &quot;5 h 50 min&quot;, &quot;to&quot;: &quot;7 h 50 min&quot;, &quot;day&quot;: &quot;Day 1&quot;}" tabindex="0"><title>Client board feedback: waiting 1 h, working 1 h, total 2 h</title><rect class="seg" x="541.6666666666666" y="268" width="38" height="24" fill="#E3F5EC" stroke="#2E8B67" stroke-width="0.8" rx="4"/><rect class="seg" x="579.6666666666666" y="268" width="38" height="24" fill="#B8E8D3" stroke="#2E8B67" stroke-width="0.8" rx="4"/><text x="625.6666666666666" y="284" font-size="11" fill="#55577A">2 h</text><rect x="541.6666666666666" y="264" width="146" height="32" fill="transparent"/></g><text x="306" y="323" font-size="12" text-anchor="end" fill="#1C1D4F">Board revision · Copywriter + AD</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Board revision \u00b7 Copywriter + AD&quot;, &quot;who&quot;: &quot;Agency&quot;, &quot;wait&quot;: &quot;30 min&quot;, &quot;work&quot;: &quot;1 h&quot;, &quot;total&quot;: &quot;1 h 30 min&quot;, &quot;from&quot;: &quot;7 h 50 min&quot;, &quot;to&quot;: &quot;9 h 20 min&quot;, &quot;day&quot;: &quot;Day 1\u20132&quot;}" tabindex="0"><title>Board revision · Copywriter + AD: waiting 30 min, working 1 h, total 1 h 30 min</title><rect class="seg" x="617.6666666666666" y="308" width="19.0" height="24" fill="#C9CAE0" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><rect class="seg" x="636.6666666666666" y="308" width="38" height="24" fill="#1C1D4F" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><text x="682.6666666666666" y="324" font-size="11" fill="#55577A">1 h 30 min</text><rect x="617.6666666666666" y="304" width="127.0" height="32" fill="transparent"/></g><text x="306" y="363" font-size="12" text-anchor="end" fill="#1C1D4F">Video production · Flow, AE, Suno</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Video production \u00b7 Flow, AE, Suno&quot;, &quot;who&quot;: &quot;Agency&quot;, &quot;wait&quot;: &quot;30 min&quot;, &quot;work&quot;: &quot;2 h&quot;, &quot;total&quot;: &quot;2 h 30 min&quot;, &quot;from&quot;: &quot;9 h 20 min&quot;, &quot;to&quot;: &quot;11 h 50 min&quot;, &quot;day&quot;: &quot;Day 2&quot;}" tabindex="0"><title>Video production · Flow, AE, Suno: waiting 30 min, working 2 h, total 2 h 30 min</title><rect class="seg" x="674.6666666666666" y="348" width="19.0" height="24" fill="#C9CAE0" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><rect class="seg" x="693.6666666666666" y="348" width="76" height="24" fill="#1C1D4F" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><text x="777.6666666666666" y="364" font-size="11" fill="#55577A">2 h 30 min</text><rect x="674.6666666666666" y="344" width="165.0" height="32" fill="transparent"/></g><text x="306" y="403" font-size="12" text-anchor="end" fill="#1C1D4F">Internal content review · ECD, CGH, AD/AAD, AM</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Internal content review \u00b7 ECD, CGH, AD/AAD, AM&quot;, &quot;who&quot;: &quot;Agency&quot;, &quot;wait&quot;: &quot;30 min&quot;, &quot;work&quot;: &quot;1 h&quot;, &quot;total&quot;: &quot;1 h 30 min&quot;, &quot;from&quot;: &quot;11 h 50 min&quot;, &quot;to&quot;: &quot;13 h 20 min&quot;, &quot;day&quot;: &quot;Day 2&quot;}" tabindex="0"><title>Internal content review · ECD, CGH, AD/AAD, AM: waiting 30 min, working 1 h, total 1 h 30 min</title><rect class="seg" x="769.6666666666666" y="388" width="19.0" height="24" fill="#C9CAE0" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><rect class="seg" x="788.6666666666666" y="388" width="38" height="24" fill="#1C1D4F" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><text x="834.6666666666666" y="404" font-size="11" fill="#55577A">1 h 30 min</text><rect x="769.6666666666666" y="384" width="127.0" height="32" fill="transparent"/></g><text x="306" y="443" font-size="12" text-anchor="end" fill="#1C1D4F">Client content review</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Client content review&quot;, &quot;who&quot;: &quot;Client&quot;, &quot;wait&quot;: &quot;30 min&quot;, &quot;work&quot;: &quot;1 h&quot;, &quot;total&quot;: &quot;1 h 30 min&quot;, &quot;from&quot;: &quot;13 h 20 min&quot;, &quot;to&quot;: &quot;14 h 50 min&quot;, &quot;day&quot;: &quot;Day 2&quot;}" tabindex="0"><title>Client content review: waiting 30 min, working 1 h, total 1 h 30 min</title><rect class="seg" x="826.6666666666666" y="428" width="19.0" height="24" fill="#E3F5EC" stroke="#2E8B67" stroke-width="0.8" rx="4"/><rect class="seg" x="845.6666666666666" y="428" width="38" height="24" fill="#B8E8D3" stroke="#2E8B67" stroke-width="0.8" rx="4"/><text x="891.6666666666666" y="444" font-size="11" fill="#55577A">1 h 30 min</text><rect x="826.6666666666666" y="424" width="127.0" height="32" fill="transparent"/></g><text x="306" y="483" font-size="12" text-anchor="end" fill="#1C1D4F">Content revision</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Content revision&quot;, &quot;who&quot;: &quot;Agency&quot;, &quot;wait&quot;: &quot;30 min&quot;, &quot;work&quot;: &quot;1 h 30 min&quot;, &quot;total&quot;: &quot;2 h&quot;, &quot;from&quot;: &quot;14 h 50 min&quot;, &quot;to&quot;: &quot;16 h 50 min&quot;, &quot;day&quot;: &quot;Day 2\u20133&quot;}" tabindex="0"><title>Content revision: waiting 30 min, working 1 h 30 min, total 2 h</title><rect class="seg" x="883.6666666666666" y="468" width="19.0" height="24" fill="#C9CAE0" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><rect class="seg" x="902.6666666666666" y="468" width="57.0" height="24" fill="#1C1D4F" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><text x="967.6666666666666" y="484" font-size="11" fill="#55577A">2 h</text><rect x="883.6666666666666" y="464" width="146.0" height="32" fill="transparent"/></g><text x="306" y="523" font-size="12" text-anchor="end" fill="#1C1D4F">Internal re-review (content)</text><g class="bar" data-tip="{&quot;step&quot;: &quot;Internal re-review (content)&quot;, &quot;who&quot;: &quot;Agency&quot;, &quot;wait&quot;: &quot;20 min&quot;, &quot;work&quot;: &quot;20 min&quot;, &quot;total&quot;: &quot;40 min&quot;, &quot;from&quot;: &quot;16 h 50 min&quot;, &quot;to&quot;: &quot;17 h 30 min&quot;, &quot;day&quot;: &quot;Day 3&quot;}" tabindex="0"><title>Internal re-review (content): waiting 20 min, working 20 min, total 40 min</title><rect class="seg" x="959.6666666666666" y="508" width="12.666666666666666" height="24" fill="#C9CAE0" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><rect class="seg" x="972.3333333333333" y="508" width="12.666666666666666" height="24" fill="#1C1D4F" stroke="#1C1D4F" stroke-width="0.8" rx="4"/><text x="992.9999999999999" y="524" font-size="11" fill="#55577A">40 min</text><rect x="959.6666666666666" y="504" width="95.33333333333333" height="32" fill="transparent"/></g><line x1="985.0" y1="70" x2="985.0" y2="550" stroke="#1C1D4F" stroke-width="2"/><text x="991.0" y="566" font-size="12" font-weight="700" fill="#1C1D4F">Planned finish: 17 h 30 min (Day 3)</text><text x="1108.5" y="320.0" font-size="12" font-weight="600" text-anchor="middle" fill="#8A4A00" transform="rotate(-90 1108.5 320.0)">Buffer 6 h 30 min</text></svg></div>
+  <p class="note">Clock starts when Account marks the brief final in the platform. Brief clarification is outside the SLA. Each step's waiting time comes before its working time. Hover over a bar for its breakdown.</p>
 
   <h2>Turnaround per step</h2>
   <div class="tablebox">
   <table>
-    <thead><tr><th>Step</th><th>Owner</th><th>Working</th><th>Waiting in BAU</th><th>Waiting here</th><th>Total</th><th>Change vs BAU</th></tr></thead>
-    <tbody id="tb"></tbody>
-    <tfoot><tr><td>Total</td><td></td><td id="fK"></td><td id="fWB"></td><td id="fW"></td><td id="fT"></td><td id="fN"></td></tr></tfoot>
+    <thead><tr><th>Step</th><th>Owner</th><th>Working</th><th>Waiting</th><th>Max turnaround</th><th>Note</th></tr></thead>
+    <tbody>
+<tr><td>Brief prep &amp; hand-off · Account</td><td>Agency</td><td class="num">1 h</td><td class="num">0</td><td class="num"><b>1 h</b></td><td>Account prepares and finalizes the brief</td></tr>
+<tr><td>Complete brief · Strategic Planner</td><td>Agency</td><td class="num">2 h</td><td class="num">0</td><td class="num"><b>2 h</b></td><td>Trend direction from the Trend Library</td></tr>
+<tr><td>Script + still images · Copywriter, AD + AI</td><td>Agency</td><td class="num">2 h</td><td class="num">0</td><td class="num"><b>2 h</b></td><td>AI script options, picked and edited; AI still images refined by prompt</td></tr>
+<tr><td>Internal board review · ECD, AD/AAD</td><td>Agency</td><td class="num">30 min</td><td class="num">20 min</td><td class="num"><b>50 min</b></td><td></td></tr>
+<tr><td>Client board feedback</td><td>Client</td><td class="num">1 h</td><td class="num">1 h</td><td class="num"><b>2 h</b></td><td>One round only</td></tr>
+<tr><td>Board revision · Copywriter + AD</td><td>Agency</td><td class="num">1 h</td><td class="num">30 min</td><td class="num"><b>1 h 30 min</b></td><td>By prompt, then straight to production</td></tr>
+<tr><td>Video production · Flow, AE, Suno</td><td>Agency</td><td class="num">2 h</td><td class="num">30 min</td><td class="num"><b>2 h 30 min</b></td><td></td></tr>
+<tr><td>Internal content review · ECD, CGH, AD/AAD, AM</td><td>Agency</td><td class="num">1 h</td><td class="num">30 min</td><td class="num"><b>1 h 30 min</b></td><td></td></tr>
+<tr><td>Client content review</td><td>Client</td><td class="num">1 h</td><td class="num">30 min</td><td class="num"><b>1 h 30 min</b></td><td></td></tr>
+<tr><td>Content revision</td><td>Agency</td><td class="num">1 h 30 min</td><td class="num">30 min</td><td class="num"><b>2 h</b></td><td></td></tr>
+<tr><td>Internal re-review (content)</td><td>Agency</td><td class="num">20 min</td><td class="num">20 min</td><td class="num"><b>40 min</b></td><td>Process complete after this step</td></tr>
+    </tbody>
+    <tfoot><tr><td>Total</td><td></td><td></td><td></td><td>17 h 30 min</td><td>24 h SLA, 6 h 30 min buffer</td></tr></tfoot>
   </table>
   </div>
 
-  <h2>What each side commits to on the fast track</h2>
+  <h2>What each side commits to</h2>
   <div class="commit">
     <div class="box agency"><h3>Agency</h3><ul>
-      <li>Strategic Planner completes the brief (trend insight, angle, references) within 4 working hours of brief final.</li>
-      <li>Brainstorm (Copywriter + AD on call) starts within 1 working hour of the completed brief.</li>
-      <li>Internal reviews and re-reviews picked up within 20 minutes of the urgent alert.</li>
-      <li>Revisions start as soon as feedback arrives: board 1 h, content 1 h.</li>
-      <li>The platform records the SLA result. Late content is still posted.</li>
+      <li>Content complete within 3 business days of brief final.</li>
+      <li>Account prepares and finalizes the brief within 1 working hour; the Strategic Planner completes it with a trend direction within 2 working hours.</li>
+      <li>Script and still images ready within 2 working hours of the completed brief: AI script options, picked and edited by the copywriter, then AI still images refined by the art director.</li>
+      <li>Internal reviews picked up within 20–30 minutes of the alert.</li>
+      <li>Revisions returned within 1.5 hours (board) or 2 hours (content).</li>
+      <li>After the content revision and internal re-review, the agency sends the final content and closes the task. Late content is still posted, and the platform records the miss.</li>
     </ul></div>
     <div class="box client"><h3>Client</h3><ul>
-      <li>First reviews (board, content) within 2 working hours. Re-reviews within 1 working hour.</li>
-      <li>A named approver is available during the 2-day window.</li>
-      <li>One combined set of feedback per review, in the platform.</li>
-      <li>Any delay on the client side moves the deadline by the same number of hours.</li>
+      <li>Board feedback within 2 working hours (1 h to open, 1 h to review), one round only.</li>
+      <li>Content review within 1 h 30 min (30 min to open, 1 h to review).</li>
+      <li>A named approver available during the 3 days, and one combined set of feedback per review, in the platform.</li>
+      <li>Changes requested after the final content start a new brief. Any delay on the client side moves the deadline by the same number of hours.</li>
     </ul></div>
   </div>
 
-  <h2>Assumptions in this draft</h2>
+  <h2>Assumptions</h2>
   <ul class="a">
-    <li>2 business days = 16 working hours, from brief final (by Account) to final client approval.</li>
-    <li>The Strategic Planner's brief completion (4 h, counted as working time with no waiting) is inside the clock.</li>
-    <li>Same steps, gates, reviewers and working times as the BAU SLA draft, one revision at each gate.</li>
-    <li>Working time is not compressed. Only waiting is.</li>
-    <li>Video generation and rendering keep their 2 hours of waiting.</li>
-    <li>Live board review: 1 h to get everyone in a session, 30 min review, 1 h revision, then 30 min for the client to sign off in the platform.</li>
+    <li>1 business day = 8 working hours. The SLA is 24 working hours from brief final to completion.</li>
+    <li>Working times cover all 3 videos together. The Strategic Planner's brief completion (2 h) and the AI script and still images step (2 h) are working time with no waiting.</li>
+    <li>Fast-track waits: internal reviews picked up within 20–30 minutes, 30 minutes of video generation and rendering, and the client opens the board review within 1 hour and the content review within 30 minutes.</li>
+    <li>One round of client board feedback, then straight to production. After the content revision, only an internal re-review follows, and the process is complete.</li>
   </ul>
 
-  <footer>Builds on the <a href="bau-sla.html">BAU SLA draft</a> and the <a href="trendjacking-bpmn.html">Trendjacking BPMN</a>. Answers from Ghulfi, 12 Nov 2026.</footer>
+  <footer>Draft v3, 17 Nov 2026 (changes from Ghulfi) · <a href="trendjacking-bpmn.html">Trendjacking Content Workflow BPMN</a>.</footer>
 </div>
 <div id="tip"></div>
 <script>
-const NAVY='#1C1D4F', MINT='#B8E8D3', MINT_D='#2E8B67', MSG='#55577A', AG_WAIT='#C9CAE0', CL_WAIT='#E3F5EC';
-// id, label, owner, work, BAU wait, fast-track wait, phase, why
-const BASE = [
-  ['p1','Complete brief · Strategic Planner','A',4,0,0,'A',''],
-  ['a1','Brainstorm session & script','A',1,3,1,'A','On-call Copywriter + AD instead of the next scheduled session'],
-  ['a2','AI mood board in platform','A',1/3,0,0,'A',''],
-  ['a3','AI visuals revision · AD re-prompts','A',0.5,0,0,'A',''],
-  ['a4','Internal board review · ECD, AD/AAD','A',1/3,2/3,1/3,'A','Urgent alert, picked up within 20 min'],
-  ['a5','Client board review','C',5/12,43/12,19/12,'A','Client reviews within 2 h instead of 4 h'],
-  ['a6','Board revision · Copywriter + AD','A',1,0.5,0,'A','Starts as soon as feedback lands'],
-  ['a7','Internal re-review (board)','A',1/3,2/3,1/3,'A','Picked up within 20 min'],
-  ['a8','Client re-review (board)','C',5/12,19/12,7/12,'A','Within 1 h instead of 2 h'],
-  ['b1','Video production · Flow, AE, Suno','A',2,2,2,'B',''],
-  ['b2','Internal content review · ECD, CGH, AD/AAD, AM','A',1/3,5/3,1/3,'B','Urgent alert, picked up within 20 min'],
-  ['b3','Client content review','C',5/12,43/12,19/12,'B','Client reviews within 2 h instead of 4 h'],
-  ['b4','Content revision','A',1,1,0,'B','Starts as soon as feedback lands'],
-  ['b5','Internal re-review (content)','A',1/3,2/3,1/3,'B','Picked up within 20 min'],
-  ['b6','Client re-review & final approval','C',5/12,19/12,7/12,'B','Within 1 h instead of 2 h'],
-];
-const $ = id => document.getElementById(id);
-const fh = h => { const m = Math.round(h * 60); if (m === 0) return '0'; if (m < 60) return m + ' min'; const a = Math.floor(m / 60), b = m % 60; return b ? a + ' h ' + b + ' min' : a + ' h'; };
-
-function plan() {
-  const ag = $('lAg').checked, cl = $('lCl').checked, live = $('lLive').checked, sign = $('lSign').checked, pre = $('lPre').checked, early = $('lEarly').checked, prod = +$('lProd').value;
-  let rows = [];
-  for (const [id, label, owner, work, wb, wf, ph, why] of BASE) {
-    const fast = owner === 'A' ? ag : cl;
-    rows.push({id, label, owner, work: id === 'b1' ? prod : work, wb, w: fast ? wf : wb, ph, why: fast && wf !== wb ? why : '', changed: false});
+  const tip = document.getElementById('tip');
+  function showTip(g, x, y) {
+    const d = JSON.parse(g.dataset.tip);
+    tip.innerHTML = '<b></b><div class="r"><span>Waiting</span><span></span></div><div class="r"><span>Working</span><span></span></div><div class="r t"><span>Total</span><span></span></div><div class="r"><span>Clock</span><span></span></div>';
+    const s = tip.querySelectorAll('b, .r span:last-child');
+    s[0].textContent = d.step + ' · ' + d.who;
+    s[1].textContent = d.wait; s[2].textContent = d.work; s[3].textContent = d.total;
+    s[4].textContent = d.from + ' → ' + d.to + ' (' + d.day + ')';
+    tip.style.display = 'block';
+    const r = tip.getBoundingClientRect();
+    tip.style.left = Math.min(x + 14, innerWidth - r.width - 8) + 'px';
+    tip.style.top = (y + 16 + r.height > innerHeight ? y - r.height - 12 : y + 16) + 'px';
   }
-  if (live) {
-    const i = rows.findIndex(r => r.id === 'a4');
-    rows.splice(i, 5,
-      {id:'l1', label:'Live board review · ECD, AD/AAD, client', owner:'A', work:0.5, wb:null, w:1, ph:'A', why:'Replaces internal + client board reviews', changed:true},
-      {id:'l2', label:'Board revision · Copywriter + AD', owner:'A', work:1, wb:0.5, w: ag ? 0 : 0.5, ph:'A', why: ag ? 'Starts as soon as feedback lands' : '', changed:false},
-      {id:'l3', label:'Client board sign-off in platform', owner:'C', work:1/6, wb:null, w:1/3, ph:'A', why:'Replaces internal + client re-reviews', changed:true});
-  }
-  const pl = rows.find(r => r.id === 'p1');
-  pl.isNew = true; pl.why = 'New in trendjacking: trend insight, angle, references';
-  if (early) { pl.work = 1; pl.label = 'Finish brief · Strategic Planner'; pl.why = 'Planner starts during brief clarification; 1 h left after brief final'; }
-  if (sign) for (const r of rows) if (r.id === 'a7' || r.id === 'b5') {
-    r.label = r.id === 'a7' ? 'ECD sign-off on board revision' : 'ECD sign-off on content revision';
-    r.work = 1/6; r.w = 0; r.why = 'Quick sign-off instead of a full re-review'; r.changed = true;
-  }
-  for (const r of rows) { r.changed = r.changed || r.isNew || (r.wb !== null && Math.abs(r.w - r.wb) > 1e-6) || (r.id === 'b1' && prod !== 2); r.clock = !(pre && r.ph === 'A'); }
-  return {rows, pre, prod};
-}
-
-function bauTotal(prod) { return BASE.reduce((a, r) => a + r[4] + (r[0] === 'b1' ? prod : r[3]), 0); }
-
-const tip = $('tip');
-function draw() {
-  const {rows, pre, prod} = plan();
-  const on = rows.filter(r => r.clock), off = rows.filter(r => !r.clock);
-  const W = on.reduce((a, r) => a + r.w, 0), K = on.reduce((a, r) => a + r.work, 0), T = W + K;
-  const offT = off.reduce((a, r) => a + r.w + r.work, 0);
-  const bau = bauTotal(prod) - (pre ? BASE.filter(r => r[6] === 'A').reduce((a, r) => a + r[3] + r[4], 0) : 0);
-  // cards
-  $('vTot').textContent = fh(T);
-  $('sTot').textContent = (T / 8).toFixed(1) + ' business days' + (pre ? ', counting production and content review only.' : '.');
-  const gap = 16 - T;
-  $('cTot').className = 'card ' + (gap >= -1e-6 ? 'ok' : 'over');
-  $('vGap').textContent = gap >= -1e-6 ? fh(gap) + ' spare' : fh(-gap) + ' over';
-  $('sGap').textContent = gap >= -1e-6 ? 'Fits within 2 business days.' : 'Does not fit 2 business days. Finishes on day ' + (Math.floor((T - 1e-6) / 8) + 1) + '.';
-  $('vWW').textContent = fh(K) + ' / ' + fh(W);
-  $('vSav').textContent = fh(bau - T);
-  $('sSav').textContent = 'Same steps on BAU turnaround would take ' + fh(bau) + '.';
-  $('keyMsg').textContent = gap >= -1e-6
-    ? 'This plan finishes in ' + fh(T) + ', inside 2 business days with ' + fh(gap) + ' to spare.'
-    : 'With the same gates and reviewers, one video takes ' + fh(T) + ' even on fast-track turnaround: ' + fh(-gap) + ' over 2 business days. Use the levers below to see what closes the gap.';
-  $('pre').style.display = pre ? 'block' : 'none';
-  $('pre').textContent = 'Phase A (' + fh(offT) + ') runs before the 2-day window and is not on the clock.';
-  $('prodV').textContent = fh(prod);
-  // chart
-  const PXH = 34, X0 = 330, ROW = 40, TOP = 100, hours = Math.max(24, Math.ceil((T + 0.5) / 8) * 8);
-  const Wd = X0 + hours * PXH + 90, H = TOP + on.length * ROW + 50;
-  let o = [];
-  for (let d = 0; d <= hours / 8; d++) {
-    const x = X0 + d * 8 * PXH;
-    o.push(`<line x1="${x}" y1="${TOP - 30}" x2="${x}" y2="${H - 40}" stroke="#C9CAD3" stroke-width="1.2"/>`);
-    if (d < hours / 8) o.push(`<text x="${x + 4 * PXH}" y="${TOP - 40}" font-size="12" font-weight="600" text-anchor="middle" fill="${NAVY}">Day ${d + 1}</text>`);
-  }
-  for (let h = 0; h <= hours; h += 1) if (h % 8) o.push(`<line x1="${X0 + h * PXH}" y1="${TOP - 14}" x2="${X0 + h * PXH}" y2="${H - 40}" stroke="#EFEFF3"/>`);
-  for (let h = 0; h <= hours; h += 2) o.push(`<text x="${X0 + h * PXH}" y="${TOP - 18}" font-size="10" text-anchor="middle" fill="${MSG}">${h} h</text>`);
-  const xs = X0 + 16 * PXH;
-  if (T < 16) o.push(`<rect x="${X0 + T * PXH}" y="${TOP - 30}" width="${xs - X0 - T * PXH}" height="${H - 40 - TOP + 30}" fill="#E8F7F0" opacity="0.6"/>`);
-  else o.push(`<rect x="${xs}" y="${TOP - 30}" width="${(T - 16) * PXH}" height="${H - 40 - TOP + 30}" fill="#FBE3C4" opacity="0.55"/>`);
-  o.push(`<line x1="${xs}" y1="${TOP - 62}" x2="${xs}" y2="${H - 40}" stroke="#C26A00" stroke-width="2" stroke-dasharray="6 4"/>`);
-  o.push(`<text x="${xs - 6}" y="${TOP - 58}" font-size="11.5" font-weight="600" text-anchor="end" fill="#8A4A00">SLA: 2 business days (16 working hours)</text>`);
-  let t = 0;
-  on.forEach((r, i) => {
-    const y = TOP + i * ROW, isA = r.owner === 'A';
-    const [wc, kc, st] = isA ? [AG_WAIT, NAVY, NAVY] : [CL_WAIT, MINT, MINT_D];
-    const xw = X0 + t * PXH, ww = r.w * PXH, xk = xw + ww, wk = Math.max(r.work * PXH, 3);
-    o.push(`<text x="${X0 - 14}" y="${y + 23}" font-size="12" text-anchor="end" fill="${r.changed ? '#8A4A00' : NAVY}">${r.changed ? '<tspan fill="#C26A00" font-size="11">●</tspan> ' : ''}${r.label}</text>`);
-    const d1 = Math.floor(t / 8) + 1, d2 = Math.floor((t + r.w + r.work - 1e-6) / 8) + 1;
-    const data = JSON.stringify({step: r.label, who: isA ? 'Agency' : 'Client', wait: fh(r.w), work: fh(r.work), total: fh(r.w + r.work), from: fh(t) === '0' ? '0 h' : fh(t), to: fh(t + r.w + r.work), day: 'Day ' + d1 + (d1 === d2 ? '' : '–' + d2), why: r.why}).replace(/"/g, '&quot;');
-    o.push(`<g class="bar" data-tip="${data}" tabindex="0">`);
-    if (ww > 0) o.push(`<rect class="seg" x="${xw}" y="${y + 8}" width="${ww}" height="24" fill="${wc}" stroke="${st}" stroke-width="0.8" rx="4"/>`);
-    o.push(`<rect class="seg" x="${xk}" y="${y + 8}" width="${wk}" height="24" fill="${kc}" stroke="${st}" stroke-width="0.8" rx="4"/>`);
-    o.push(`<text x="${xk + wk + 8}" y="${y + 24}" font-size="11" fill="${MSG}">${fh(r.w + r.work)}</text>`);
-    o.push(`<rect x="${xw}" y="${y + 4}" width="${ww + wk + 70}" height="32" fill="transparent"/></g>`);
-    t += r.w + r.work;
-  });
-  const xe = X0 + t * PXH;
-  o.push(`<line x1="${xe}" y1="${TOP - 30}" x2="${xe}" y2="${H - 40}" stroke="${NAVY}" stroke-width="2"/>`);
-  o.push(`<text x="${xe + 6}" y="${H - 24}" font-size="12" font-weight="700" fill="${NAVY}">Planned finish: ${fh(t)} (Day ${Math.floor((t - 1e-6) / 8) + 1})</text>`);
-  $('chart').innerHTML = `<svg viewBox="0 0 ${Wd} ${H}" width="${Wd}" height="${H}" role="img" aria-label="Trendjacking timeline: ${fh(T)} against a 16-hour SLA" font-family="Poppins, system-ui, sans-serif">${o.join('')}</svg>`;
-  const svg = $('chart').querySelector('svg');
-  svg.querySelectorAll('.bar').forEach(g => {
+  document.querySelectorAll('.bar').forEach(g => {
+    g.querySelector('title').remove();
     g.addEventListener('mousemove', e => showTip(g, e.clientX, e.clientY));
     g.addEventListener('mouseleave', () => tip.style.display = 'none');
     g.addEventListener('focus', () => { const b = g.getBoundingClientRect(); showTip(g, b.left, b.bottom - 16); });
     g.addEventListener('blur', () => tip.style.display = 'none');
   });
-  // table
-  let tb = '';
-  for (const r of rows) {
-    const chg = r.isNew ? 'New step (not in BAU)' + ($('lEarly').checked ? ' · started during clarification, saves 3 h' : '')
-      : r.wb === null ? 'New step: ' + r.why.toLowerCase()
-      : r.changed ? (r.why || 'Changed') + (r.wb + (BASE.find(b => b[0] === r.id) || [0,0,0,r.work])[3] - r.w - r.work > 1e-6 ? ' · saves ' + fh(r.wb + (BASE.find(b => b[0] === r.id) || [0,0,0,r.work])[3] - r.w - r.work) : '')
-      : 'Same as BAU';
-    tb += `<tr${r.clock ? '' : ' style="opacity:.45"'}><td>${r.changed ? '<span class="dot"></span>' : ''}${r.label}${r.clock ? '' : ' (before the window)'}</td><td>${r.owner === 'A' ? 'Agency' : 'Client'}</td><td class="num">${fh(r.work)}</td><td class="num">${r.wb === null || r.isNew ? '–' : fh(r.wb)}</td><td class="num">${fh(r.w)}</td><td class="num"><b>${fh(r.w + r.work)}</b></td><td class="${r.changed ? 'chg' : 'same'}">${chg}</td></tr>`;
-  }
-  $('tb').innerHTML = tb;
-  $('fK').textContent = fh(K); $('fW').textContent = fh(W); $('fT').textContent = fh(T);
-  $('fWB').textContent = ''; $('fN').textContent = gap >= -1e-6 ? '16 h SLA, ' + fh(gap) + ' spare' : '16 h SLA, ' + fh(-gap) + ' over';
-}
-function showTip(g, x, y) {
-  const d = JSON.parse(g.dataset.tip);
-  tip.innerHTML = '<b></b><div class="r"><span>Waiting</span><span></span></div><div class="r"><span>Working</span><span></span></div><div class="r t"><span>Total</span><span></span></div><div class="r"><span>Clock</span><span></span></div><div class="w"></div>';
-  const s = tip.querySelectorAll('b, .r span:last-child');
-  s[0].textContent = d.step + ' · ' + d.who;
-  s[1].textContent = d.wait; s[2].textContent = d.work; s[3].textContent = d.total;
-  s[4].textContent = d.from + ' → ' + d.to + ' (' + d.day + ')';
-  tip.querySelector('.w').textContent = d.why ? 'Changed: ' + d.why : '';
-  tip.style.display = 'block';
-  const r = tip.getBoundingClientRect();
-  tip.style.left = Math.min(x + 14, innerWidth - r.width - 8) + 'px';
-  tip.style.top = (y + 16 + r.height > innerHeight ? y - r.height - 12 : y + 16) + 'px';
-}
-['lAg','lCl','lLive','lSign','lPre','lEarly'].forEach(id => $(id).onchange = draw);
-$('lProd').oninput = draw;
-draw();
 </script>
 </body>
 </html>

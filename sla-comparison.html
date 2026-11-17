@@ -92,12 +92,12 @@
 <a href="./" style="position:fixed;top:12px;right:16px;z-index:20;font:600 12px Poppins,system-ui,sans-serif;color:#1C1D4F;background:#F4F4F2;border-radius:999px;padding:6px 12px;text-decoration:none">← All documents</a>
 <div class="wrap">
   <h1>SLA comparison: BAU vs Trendjacking</h1>
-  <p class="sub">Brief final to final approval · one revision at each gate · 1 business day = 8 working hours · Draft · 13 Nov 2026</p>
+  <p class="sub">Brief final to final approval · one revision at each gate · 1 business day = 8 working hours · Draft v3 · 17 Nov 2026</p>
   <p class="key" id="keyMsg"></p>
 
   <div class="cards">
-    <div class="card bau ok"><div class="lbl">BAU · 5 video variants · SLA 5 business days</div><div class="big" id="bTot"></div><div class="small" id="bSub"></div></div>
-    <div class="card tj" id="tCard"><div class="lbl">Trendjacking · 3 video variants · SLA 2 business days</div><div class="big" id="tTot"></div><div class="small" id="tSub"></div></div>
+    <div class="card bau ok"><div class="lbl">BAU · 5 short-form videos · SLA 5 business days</div><div class="big" id="bTot"></div><div class="small" id="bSub"></div></div>
+    <div class="card tj" id="tCard"><div class="lbl">Trendjacking · 3 short-form videos · SLA 3 business days</div><div class="big" id="tTot"></div><div class="small" id="tSub"></div></div>
     <div class="card"><div class="lbl">Hands-on work · BAU vs Trendjacking</div><div class="big" id="work" style="font-size:22px;line-height:1.35"></div><div class="small" id="workSub"></div></div>
     <div class="card"><div class="lbl">Waiting · BAU vs Trendjacking</div><div class="big" id="wait" style="font-size:22px;line-height:1.35"></div><div class="small">Trendjacking uses fast-track turnaround on both sides.</div></div>
   </div>
@@ -117,7 +117,7 @@
   <div class="tablebox">
   <table>
     <thead>
-      <tr><th></th><th></th><th class="grp" colspan="3">BAU · 5 variants</th><th class="grp" colspan="3">Trendjacking · 3 variants</th><th></th></tr>
+      <tr><th></th><th></th><th class="grp" colspan="3">BAU · 5 videos</th><th class="grp" colspan="3">Trendjacking · 3 videos</th><th></th></tr>
       <tr><th>Step</th><th>Owner</th><th>Waiting</th><th>Working</th><th>Total</th><th>Waiting</th><th>Working</th><th>Total</th><th>Difference · why</th></tr>
     </thead>
     <tbody id="tb"></tbody>
@@ -127,13 +127,12 @@
 
   <h2>Assumptions</h2>
   <ul class="a">
-    <li>BAU uses the final BAU timeline: one brief, 5 video variants, 30 h.</li>
-    <li>Trendjacking uses the same steps and working times as final BAU, except that Account's brief prep is not a separate step: Account and the Strategic Planner complete the brief together (4 h of working time), inside the 2-day clock.</li>
-    <li>Trendjacking covers 3 video variants instead of 5: video production is 2 h of working time with 30 min of generation and rendering, and content revision is 1 h 30 min of working time. Reviews keep the same working time, as in BAU.</li>
-    <li>Fast-track turnaround on Trendjacking: internal reviews picked up within 20–30 min, board and content revisions start within 30 min, and client waits are halved (board review 1 h, content review and re-reviews 30 min). Brainstorm pickup (1 h) is unchanged.</li>
-    <li>Shorter internal reviews in Trendjacking: the first board review takes 30 min (1 h in BAU) and the content re-review 20 min (30 min in BAU).</li>
-    <li>Trendjacking has one round of client feedback on the board: the board is revised and goes straight to video production, with no internal or client re-review of the board.</li>
-  </ul>
+    <li>Both flows: Account prepares and finalizes the brief (1 h, the clock starts here), then the Strategic Planner completes it with a trend direction (2 h). There is no brainstorm: AI drafts script options that the copywriter picks and edits, then AI still images that the art director refines by prompt (2 h).</li>
+    <li>Both flows end after the internal re-review of the content. There is no final client re-review; further changes start a new brief.</li>
+    <li>BAU: after a board revision, internal and client re-review the board together (1 h waiting, 1 h working). Trendjacking: one round of client board feedback, then straight to production.</li>
+    <li>Trendjacking covers 3 videos instead of 5: video production is 2 h of working time with 30 min of generation and rendering, and content revision is 1 h 30 min. Fast-track waits: internal reviews picked up within 20–30 min, revisions start within 30 min, and the client opens the content review within 30 min.</li>
+    <li>Client board review is 1 h waiting and 1 h working in both flows.</li>
+</ul>
 
   <footer>Sources: <a href="bau-sla.html">BAU SLA (final timeline)</a> · <a href="trendjacking-sla.html">Trendjacking SLA draft</a> · answers from Ghulfi, 13 Nov 2026.</footer>
 </div>
@@ -142,22 +141,18 @@
 const NAVY='#1C1D4F', MSG='#55577A', OR='#C26A00';
 // label, owner, BAU [wait, work] or null, TJ [wait, work] or null, why
 const S = [
-  ['Brief prep & hand-off · Account','A',[0,1],null,'','Not a separate step in Trendjacking: done within Complete brief'],
-  ['Complete brief · Account + Strategic Planner','A',null,[0,4],'Trendjacking only: Account and Planner complete the brief together (trend insight, angle, references)'],
-  ['Brainstorm session & script','A',[1,3],[1,3],''],
-  ['AI mood board in platform','A',[0,1/3],[0,1/3],''],
-  ['AI visuals revision · AD re-prompts','A',[0,2/3],[0,2/3],''],
-  ['Internal board review · ECD, AD/AAD','A',[2/3,1],[1/3,0.5],'Picked up within 20 min, 30 min review instead of 1 h'],
-  ['Client board review','C',[2,1],[1,1],'Client opens within 1 h instead of 2 h'],
+  ['Brief prep & hand-off · Account','A',[0,1],[0,1],''],
+  ['Complete brief · Strategic Planner','A',[0,2],[0,2],''],
+  ['Script + still images · Copywriter, AD + AI','A',[0,2],[0,2],''],
+  ['Internal board review · ECD, AD/AAD','A',[2/3,5/6],[1/3,0.5],'Picked up within 20 min, 30 min review instead of 50 min'],
+  ['Client board review','C',[1,1],[1,1],'One round only in Trendjacking'],
   ['Board revision · Copywriter + AD','A',[0.5,1],[0.5,1],''],
-  ['Internal re-review (board)','A',[2/3,1],null,'','Not in Trendjacking: after one round of client feedback the revised board goes straight to production'],
-  ['Client re-review (board)','C',[1,1],null,'','Not in Trendjacking: the client gives board feedback once'],
-  ['Video production · Flow, AE, Suno','A',[1,3],[0.5,2],'3 variants instead of 5: 2 h working, 30 min generation and rendering'],
+  ['Internal + client re-review (board)','C',[1,1],null,'','Not in Trendjacking: the revised board goes straight to production'],
+  ['Video production · Flow, AE, Suno','A',[1,3],[0.5,2],'3 videos instead of 5: 2 h working, 30 min generation and rendering'],
   ['Internal content review · ECD, CGH, AD/AAD, AM','A',[1,1],[0.5,1],'Picked up within 30 min'],
   ['Client content review','C',[1,1],[0.5,1],'Client opens within 30 min instead of 1 h'],
-  ['Content revision','A',[1,2],[0.5,1.5],'3 variants: starts within 30 min, 1 h 30 min of revision'],
+  ['Content revision','A',[1,2],[0.5,1.5],'3 videos: starts within 30 min, 1 h 30 min of revision'],
   ['Internal re-review (content)','A',[2/3,0.5],[1/3,1/3],'Picked up within 20 min, 20 min review instead of 30 min'],
-  ['Client re-review & final approval','C',[1,1],[0.5,1],'Client opens within 30 min instead of 1 h'],
 ];
 const $ = id => document.getElementById(id);
 const fh = h => { const m = Math.round(h * 60); if (m === 0) return '0'; if (m < 60) return m + ' min'; const a = Math.floor(m / 60), b = m % 60; return b ? a + ' h ' + b + ' min' : a + ' h'; };
@@ -167,12 +162,12 @@ const BW = sum(2,0), BK = sum(2,1), TW = sum(3,0), TK = sum(3,1), BT = BW + BK, 
 $('bTot').textContent = fh(BT);
 $('bSub').textContent = (BT / 8).toFixed(1) + ' business days · ' + fh(40 - BT) + ' of buffer.';
 $('tTot').textContent = fh(TT);
-$('tCard').className = 'card tj ' + (TT <= 16 ? 'ok' : 'over');
-$('tSub').textContent = (TT / 8).toFixed(1) + ' business days · ' + (TT <= 16 ? fh(16 - TT) + ' of buffer.' : fh(TT - 16) + ' over the 16-hour SLA.');
+$('tCard').className = 'card tj ' + (TT <= 24 ? 'ok' : 'over');
+$('tSub').textContent = (TT / 8).toFixed(1) + ' business days · ' + (TT <= 24 ? fh(24 - TT) + ' of buffer.' : fh(TT - 24) + ' over the 24-hour SLA.');
 $('work').textContent = fh(BK) + ' / ' + fh(TK);
-$('workSub').textContent = TK > 16 ? 'Trendjacking hands-on work alone is ' + fh(TK - 16) + ' more than 16 working hours.' : 'Trendjacking hands-on work fits within 16 working hours.';
+$('workSub').textContent = 'Working time per brief, all videos together.';
 $('wait').textContent = fh(BW) + ' / ' + fh(TW);
-$('keyMsg').textContent = 'BAU finishes in ' + fh(BT) + ' against 40 h. Trendjacking finishes in ' + fh(TT) + ' against 16 h, so it misses its SLA by ' + fh(TT - 16) + '. Its hands-on work alone (' + fh(TK) + ') is more than 16 hours, so faster turnaround cannot close the gap.';
+$('keyMsg').textContent = 'BAU finishes in ' + fh(BT) + ' against 40 h (5 business days). Trendjacking finishes in ' + fh(TT) + ' against 24 h (3 business days). Both fit, with ' + fh(40 - BT) + ' and ' + fh(24 - TT) + ' to spare.';
 
 // chart
 const PXH = 23, X0 = 330, ROW = 46, TOP = 96, HOURS = 40;
@@ -186,7 +181,7 @@ for (let d = 0; d <= HOURS / 8; d++) {
 for (let h = 0; h <= HOURS; h++) if (h % 8) o.push(`<line x1="${X0 + h * PXH}" y1="${TOP - 14}" x2="${X0 + h * PXH}" y2="${H - 44}" stroke="#EFEFF3"/>`);
 for (let h = 0; h <= HOURS; h += 2) o.push(`<text x="${X0 + h * PXH}" y="${TOP - 18}" font-size="10" text-anchor="middle" fill="${MSG}">${h} h</text>`);
 const sl = (h, c, txt, dy) => { const x = X0 + h * PXH; o.push(`<line x1="${x}" y1="${TOP - 66 + dy}" x2="${x}" y2="${H - 44}" stroke="${c}" stroke-width="2" stroke-dasharray="6 4"/>`); o.push(`<text x="${x - 6}" y="${TOP - 62 + dy}" font-size="11.5" font-weight="600" text-anchor="end" fill="${c}">${txt}</text>`); };
-sl(16, OR, 'Trendjacking SLA: 2 business days (16 h)', 0);
+sl(24, OR, 'Trendjacking SLA: 3 business days (24 h)', 0);
 sl(40, NAVY, 'BAU SLA: 5 business days (40 h)', 0);
 let tb = 0, tt = 0, rows = '';
 const bar = (y, t, w, k, isB, label, who, why) => {
@@ -217,7 +212,7 @@ S.forEach(([label, owner, b, t, why, note], i) => {
 const end = (h, c, txt, y, anchor) => { const x = X0 + h * PXH; o.push(`<line x1="${x}" y1="${TOP - 30}" x2="${x}" y2="${H - 44}" stroke="${c}" stroke-width="2"/>`); o.push(`<text x="${anchor === 'end' ? x - 6 : x + 6}" y="${y}" font-size="12" font-weight="700" text-anchor="${anchor || 'start'}" fill="${c}">${txt}</text>`); };
 end(tb, NAVY, 'BAU finish: ' + fh(tb), H - 28);
 end(tt, OR, 'Trendjacking finish: ' + fh(tt), H - 28, 'end');
-$('chart').innerHTML = `<svg viewBox="0 0 ${Wd} ${H}" width="${Wd}" height="${H}" role="img" aria-label="BAU finishes at ${fh(BT)} against a 40-hour SLA; Trendjacking finishes at ${fh(TT)} against a 16-hour SLA" font-family="Poppins, system-ui, sans-serif">${o.join('')}</svg>`;
+$('chart').innerHTML = `<svg viewBox="0 0 ${Wd} ${H}" width="${Wd}" height="${H}" role="img" aria-label="BAU finishes at ${fh(BT)} against a 40-hour SLA; Trendjacking finishes at ${fh(TT)} against a 24-hour SLA" font-family="Poppins, system-ui, sans-serif">${o.join('')}</svg>`;
 $('tb').innerHTML = rows;
 $('fBW').textContent = fh(BW); $('fBK').textContent = fh(BK); $('fBT').textContent = fh(BT);
 $('fTW').textContent = fh(TW); $('fTK').textContent = fh(TK); $('fTT').textContent = fh(TT);
