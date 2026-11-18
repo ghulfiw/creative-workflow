@@ -102,18 +102,18 @@ async function api(path, body) {
 }
 function parseJSON(t) { try { return JSON.parse(t); } catch { const m = String(t).match(/\{[\s\S]*\}/); if (m) { try { return JSON.parse(m[0]); } catch {} } return null; } }
 async function aiJSON(prompt, system) {
-  try { const j = await api("/api/ai/text", { prompt, system, json: true }); setAI(true); return parseJSON(j.text); }
+  try { const j = await api("/api/ai/text", { prompt, system, json: true }); setAI(true, null, j.model); return parseJSON(j.text); }
   catch (e) { setAI(false, e.message); return null; }
 }
 async function aiImage(prompt, refs) {
   try {
     const images = (refs || []).filter(Boolean).map((d) => ({ mimeType: d.slice(5, d.indexOf(";")), data: d.slice(d.indexOf(",") + 1) }));
     const j = await api("/api/ai/image", { prompt, images, aspectRatio: "9:16" });
-    setAI(true);
+    setAI(true, null, j.model);
     return await shrink("data:" + j.mimeType + ";base64," + j.data);
   } catch (e) { setAI(false, e.message); return null; }
 }
-function setAI(ok, msg) { aiStatus = ok ? { ok: true, msg: "AI: live" } : { ok: false, msg: "AI: offline, using samples" + (msg ? " (" + msg.slice(0, 60) + ")" : "") }; const el = document.getElementById("aistat"); if (el) { el.className = "pill " + (ok ? "ok" : "warn"); el.textContent = aiStatus.msg; } }
+function setAI(ok, msg, model) { aiStatus = ok ? { ok: true, msg: "AI: live" + (model ? " · " + model : "") } : { ok: false, msg: "AI: offline, using samples" + (msg ? " (" + msg.slice(0, 60) + ")" : "") }; const el = document.getElementById("aistat"); if (el) { el.className = "pill " + (ok ? "ok" : "warn"); el.textContent = aiStatus.msg; } }
 function shrink(dataUrl, max = 720) {
   return new Promise((ok) => { const im = new Image(); im.onload = () => { const s = Math.min(1, max / Math.max(im.width, im.height)); const c = document.createElement("canvas"); c.width = Math.round(im.width * s); c.height = Math.round(im.height * s); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); ok(c.toDataURL("image/jpeg", 0.86)); }; im.onerror = () => ok(dataUrl); im.src = dataUrl; });
 }
@@ -518,7 +518,7 @@ async function checkAI() {
   try {
     const r = await fetch("/api/ai/health", { cache: "no-store" }); const j = await r.json();
     if (!j.hasKey) setAI(false, "no API key yet");
-    else { aiStatus = { ok: true, msg: "AI: ready (" + j.imageModel + ")" }; const el = document.getElementById("aistat"); if (el) { el.className = "pill ok"; el.textContent = aiStatus.msg; } if (j.hasPasscode && !passcode()) askPass(); }
+    else { aiStatus = { ok: true, msg: "AI: ready" + (j.textModels && j.textModels[0] ? " (" + j.textModels[0] + ")" : "") }; const el = document.getElementById("aistat"); if (el) { el.className = "pill ok"; el.textContent = aiStatus.msg; } if (j.hasPasscode && !passcode()) askPass(); }
   } catch { setAI(false, "API not reachable"); }
 }
 
