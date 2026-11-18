@@ -10,8 +10,8 @@ const ROLES = {
 const STAGES = [
   { id: "brief", label: "Brief", owner: "AM", hours: 1 },
   { id: "planner", label: "Complete brief", owner: "SP", hours: 2 },
-  { id: "script", label: "AI script", owner: "CW", hours: 1 },
-  { id: "images", label: "AI still images", owner: "AD", hours: 1 },
+  { id: "script", label: "AI scripts", owner: "CW", hours: 1 },
+  { id: "images", label: "AI boards", owner: "AD", hours: 1 },
   { id: "internal_board", label: "Internal board review", owner: "CL", hours: 1.5 },
   { id: "client_board", label: "Samsung board review", owner: "SS", hours: 2 },
   { id: "board_revision", label: "Board revision", owner: "AD", hours: 1.5, optional: true },
@@ -23,35 +23,68 @@ const STAGES = [
   { id: "internal_rereview", label: "Internal re-review", owner: "CL", hours: 7 / 6, optional: true },
   { id: "closed", label: "Closed", owner: "AM", hours: 0 },
 ];
-const SLA_H = 45, DAY_H = 9;
+const SLA_H = 45, DAY_H = 9, MAX_SCRIPTS = 5;
 const stageOf = (id) => STAGES.find((s) => s.id === id);
 
+// Trend Library: sample social-listening output (Snowball · local trend monitoring), until the SONAR API is connected.
+// `sample` is the write-up from the reference doc; it is the AI's style example and the offline fallback.
 const TRENDS = [
-  { id: "t1", name: "#Harbolnas 12.12 countdown", growth: "▲ 240%", src: "TikTok, Instagram, X", window: "Peaks in 3 days",
-    note: "Shopping-day countdown posts peak 19:00–22:00; phones and earbuds are the most wished-for gifts." },
-  { id: "t2", name: "#LiburanAkhirTahun", growth: "▲ 85%", src: "Instagram, TikTok", window: "Rising for 2 weeks",
-    note: "Year-end travel prep and family trips; packing-list content is trending." },
-  { id: "t3", name: "\"Unboxing ASMR\" sound", growth: "▲ 60%", src: "TikTok sound", window: "Peaks in 4 days",
-    note: "A trending sound used for calm, close-up unboxing videos." },
-  { id: "t4", name: "ASEAN Cup final watch parties", growth: "Known occasion", src: "Calendar, social listening", window: "Final in 5 days",
-    note: "Watch-party posts and big-screen searches rise in the week before the final." },
+  { id: "crackgate", name: "Crackgate Wallpaper", type: "Meme / Issue-led Trend",
+    what: "The iPhone Duo screen-crack conversation has inspired Indonesian creators to turn product concerns into memes, jokes and humorous content.",
+    links: [["Threads", "https://www.threads.com/@richard001909/post/DfBrpNVEiUI"], ["Instagram", "https://www.instagram.com/p/De_SbwJBBVS/"], ["Instagram", "https://www.instagram.com/p/DfCTs_DBkHk/"]],
+    linkNote: "Indonesian posts reacting to the screen crack through memes, humour and visual jokes.",
+    sample: { insight: "The iPhone Duo screen-crack conversation has inspired Indonesian creators to turn product concerns into memes, jokes and humorous content.",
+      so_what: "Product issues can quickly become entertainment, attracting attention beyond tech audiences and opening wider conversations about foldable smartphones.",
+      now_what: "Samsung can join the conversation through relatable humour while reinforcing confidence in the Galaxy foldable experience, supported by authentic product demonstrations.",
+      scd: "Turn foldable concerns into opportunities to showcase real Galaxy experiences." } },
+  { id: "stopwedding", name: "Stop The Wedding", type: "Social / Cultural Format Trend",
+    what: "Indonesian creators are adapting the “Stop The Wedding” format to humorously interrupt everyday situations and questionable decisions.",
+    links: [["TikTok", "https://www.tiktok.com/@adie_space/video/7694144931836841222"]],
+    linkNote: "Indonesian creators using the format in relatable everyday situations.",
+    sample: { insight: "Indonesian creators are adapting the “Stop The Wedding” format to humorously interrupt everyday situations and questionable decisions.",
+      so_what: "The format makes warnings and advice entertaining, allowing creators to challenge decisions without sounding overly serious or promotional.",
+      now_what: "Samsung can adapt the format to encourage consumers to reconsider how they choose a foldable smartphone, highlighting the practical advantages of Galaxy.",
+      scd: "Use the viral warning format to challenge common foldable purchase decisions." } },
+  { id: "padel", name: "Padel Lifestyle", type: "Lifestyle Trend",
+    what: "Padel is gaining attention as a social lifestyle activity, with Indonesian consumers sharing first-time experiences, equipment trials and moments with friends.",
+    links: [["TikTok", "https://www.tiktok.com/@justpadeluk/video/7659392828841217302"]],
+    linkNote: "Creators sharing their experiences of trying padel rackets before buying.",
+    sample: { insight: "Padel is gaining attention as a social lifestyle activity, with Indonesian consumers sharing first-time experiences, equipment trials and moments with friends.",
+      so_what: "Padel is not just about playing sports. It's also becoming a social experience where consumers connect, capture moments and share their activities.",
+      now_what: "Samsung can connect Galaxy devices to consumers' active social lifestyles, demonstrating how Galaxy smartphones and wearables support their everyday experiences.",
+      scd: "Position Galaxy as a companion for active, social lifestyles." } },
+  { id: "aseancup", name: "ASEAN Cup", type: "Occasion Trend",
+    what: "Football fans across Indonesia gather for ASEAN Cup nobar (watch parties) at home, in cafés and in front of big screens, sharing live reactions, predictions and match-day moments.",
+    links: [], linkNote: "No sample posts yet: they arrive with the SONAR feed.",
+    sample: { insight: "Football fans across Indonesia gather for ASEAN Cup nobar (watch parties) at home, in cafés and in front of big screens, sharing live reactions, predictions and match-day moments.",
+      so_what: "Big matches bring people together beyond hardcore fans, and nobar moments are filmed and shared in real time, so attention is high and shared.",
+      now_what: "Samsung can join match-day moments by showing how a big, foldable Galaxy screen keeps fans close to the game and to each other, wherever they watch.",
+      scd: "Make Galaxy the best seat in the house for every nobar moment." } },
 ];
+const DIR_FIELDS = [
+  ["insight", "Insight · What's trending?", 3],
+  ["so_what", "So What · Why does it matter?", 3],
+  ["now_what", "Now What · What's the brand opportunity?", 3],
+  ["scd", "Strategic Content Direction", 2],
+];
+const PROMPT_FIELDS = [["object", "OBJECT"], ["background", "BACKGROUND"], ["layout", "LAYOUT"], ["camera", "CAMERA"], ["lighting", "LIGHTING AND TONE"]];
+const VIDEO_FIELDS = [["sequence", "SEQUENCE", 7], ["camera", "CAMERA", 3], ["audio", "AUDIO", 3]];
 
 const fresh = () => ({
-  v: 3, role: "AM", follow: true, stage: "brief", elapsed: 0, started: false,
+  v: 4, role: "AM", follow: true, stage: "brief", elapsed: 0, started: false,
   brief: {
-    workflow: "BAU", campaign: "Year-end campaign · Brief 3", product: "Galaxy Z Flip7",
-    objective: "Drive pre-orders for the 12.12 shopping day among young urban buyers.",
-    message: "Pre-order before 12.12 and get the bundle gift. Only 3 days left.",
-    audience: "18–30, Jakarta and Surabaya, shopping-app users", channels: "Instagram Reels, TikTok",
-    ready: "10 Dec 2026", mandatories: "Price and bundle terms on screen for at least 3 seconds. Samsung logo end card.",
+    workflow: "BAU", campaign: "Snowball · Foldable confidence · Brief 1", product: "Galaxy Z Fold8",
+    objective: "Win over foldable shoppers worried about screen durability after the iPhone Duo screen-crack conversation, and grow consideration for Galaxy Z Fold8.",
+    message: "Galaxy Z Fold8: super thin and built for everyday folding. Choose your foldable with confidence.",
+    audience: "22–35, Jakarta and Surabaya, smartphone upgraders considering a foldable", channels: "Instagram Reels, TikTok",
+    ready: "1 Dec 2026", mandatories: "Show the real Galaxy Z Fold8 shape, no distortion. Competitor phones only as an unbranded dark silhouette, never named or shown with a logo. Samsung logo end card.",
     videos: 5,
   },
-  trend: null, direction: null,
-  form: { hook: "Countdown reveal", focus: "Galaxy Z Flip7 cover screen", must: "Pre-order before 12.12 · bundle gift", lang: "Bahasa Indonesia, casual", n: 3, notes: "" },
-  options: [], pick: null, script: null, scriptVersions: 0,
-  look: "", productRef: null, frames: [], selFrame: 0,
-  aiCheck: null, decision: {}, comments: [], videos: [], log: [], alerts: [],
+  trend: null, direction: null, dirVersions: 0,
+  form: { hook: "Trend format", focus: "Galaxy Z Fold8 thin design and everyday folding", must: "Choose your foldable with confidence", lang: "Bahasa Indonesia, casual", n: 5, notes: "" },
+  scripts: [],
+  productRef: null, boards: [], selBoard: 0,
+  decision: {}, comments: [], videos: [], log: [], alerts: [],
   rounds: { board: 1, content: 1 }, path: [],
 });
 
@@ -129,24 +162,57 @@ function placeholder(label, i, note) {
 function wrap(g, t, x, y, w, lh) { const words = String(t).split(" "); let line = ""; for (const wd of words) { const tt = line + wd + " "; if (g.measureText(tt).width > w && line) { g.fillText(line, x, y); line = wd + " "; y += lh; } else line = tt; } g.fillText(line, x, y); }
 
 // ---------- canned fallbacks (only when the AI is unreachable) ----------
-const SAMPLE_DIRECTION = { insight: "People count down to 12.12 together; phones are the most wished-for gift and posts peak in the evening.", angle: "The Flip opens to reveal the countdown. Each variant counts a different moment before 12.12.", tone: "Playful, fast, local slang, warm evening light", post_time: "19:00–22:00", dos: "Show the cover screen and the bundle gift clearly.", donts: "No competitor shopping apps or logos." };
-const SAMPLE_OPTIONS = [
-  { title: "Countdown flip", hook: "The phone opens on the countdown", beats: [
-    { time: "0–3s", visual: "Close-up: a closed Galaxy Z Flip7 on a desk lights up; cover screen shows a countdown", voiceover: "Tiga hari lagi…", onscreen: "3 hari lagi ke 12.12" },
-    { time: "3–7s", visual: "Hand flips the phone open in a busy Jakarta café at golden hour", voiceover: "Waktunya upgrade!", onscreen: "" },
-    { time: "7–11s", visual: "Quick cuts: selfie with the cover screen, friends laughing, the gift bundle box", voiceover: "Pre-order sekarang, dapat bundle gift.", onscreen: "Bonus bundle gift" },
-    { time: "11–15s", visual: "Offer card with the phone and the countdown, then the end card", voiceover: "Jangan sampai kelewatan.", onscreen: "Pre-order sebelum 12.12" } ] },
-  { title: "Wish list", hook: "Top of everyone's wish list", beats: [
-    { time: "0–3s", visual: "A shopping-app wish list on a phone screen, the Flip at the top", voiceover: "Wishlist kamu udah siap?", onscreen: "Wishlist 12.12" },
-    { time: "3–8s", visual: "Friends gather around as the Flip opens hands-free on a café table", voiceover: "Yang ini paling dicari.", onscreen: "" },
-    { time: "8–12s", visual: "Close-up of the bundle gift being unboxed", voiceover: "Pre-order dapat bundle gift.", onscreen: "Bonus bundle gift" },
-    { time: "12–15s", visual: "End card with the deadline", voiceover: "Cuma sampai 12.12.", onscreen: "Pre-order sebelum 12.12" } ] },
-  { title: "Night before", hook: "Midnight checkout", beats: [
-    { time: "0–3s", visual: "Night, a bedroom lit by the Flip's cover screen showing 23:59", voiceover: "Jam 23.59…", onscreen: "" },
-    { time: "3–8s", visual: "She flips it open and taps pre-order, smiling", voiceover: "Pre-order duluan.", onscreen: "Pre-order dibuka" },
-    { time: "8–12s", visual: "Morning: the gift bundle arrives at the door", voiceover: "Plus bundle gift.", onscreen: "Bonus bundle gift" },
-    { time: "12–15s", visual: "End card", voiceover: "Sebelum 12.12.", onscreen: "Pre-order sebelum 12.12" } ] },
+const SAMPLE_SCRIPTS = [
+  { title: "Setipis paspor", hook: "Is that a passport, or a phone?", beats: [
+    { time: "0–3s", visual: "Side view: a passport lies flat on a white table; a hand reaches for it", voiceover: "Cuma paspor?", onscreen: "" },
+    { time: "3–7s", visual: "The hand lifts the passport: a closed Galaxy Z Fold8 was hidden underneath, the same size and just as thin", voiceover: "Eh, ada yang ngumpet.", onscreen: "Setipis paspor" },
+    { time: "7–11s", visual: "She unfolds the Fold8 in an airport lounge; the big screen opens smoothly", voiceover: "Buka, langsung layar lebar.", onscreen: "" },
+    { time: "11–15s", visual: "Phone and passport side by side, then the Samsung end card", voiceover: "Galaxy Z Fold8. Pilih foldable dengan yakin.", onscreen: "Galaxy Z Fold8" } ] },
+  { title: "Stop the checkout", hook: "STOP! Don't pick a foldable blindly", beats: [
+    { time: "0–3s", visual: "In a phone store, a young man is about to pay for a foldable shown only as a dark silhouette; his friend bursts in", voiceover: "STOP! Jangan asal pilih foldable!", onscreen: "Stop the checkout!" },
+    { time: "3–7s", visual: "The friend hands him a Galaxy Z Fold8 and folds it open and shut", voiceover: "Cek dulu engselnya, cek dulu layarnya.", onscreen: "" },
+    { time: "7–11s", visual: "Both laugh as he tries it himself, folding it again and again", voiceover: "Yang ini dibuat buat dibuka-tutup tiap hari.", onscreen: "Dibuat buat dipakai tiap hari" },
+    { time: "11–15s", visual: "He walks out holding the Fold8; Samsung end card", voiceover: "Pilih foldable dengan yakin.", onscreen: "Galaxy Z Fold8" } ] },
+  { title: "Cuma wallpaper", hook: "My screen cracked?! Just kidding", beats: [
+    { time: "0–3s", visual: "Close-up: a folded phone screen showing a cracked-glass wallpaper; a friend gasps", voiceover: "Layarnya retak?!", onscreen: "Layar retak?" },
+    { time: "3–7s", visual: "A swipe changes the wallpaper: the Galaxy Z Fold8 screen is perfectly fine", voiceover: "Santai, cuma wallpaper.", onscreen: "Cuma wallpaper 😅" },
+    { time: "7–11s", visual: "She unfolds the Fold8 to its full screen and scrolls the memes together with her friend", voiceover: "Foldable-ku baik-baik aja.", onscreen: "" },
+    { time: "11–15s", visual: "The Fold8 closes with a soft snap; Samsung end card", voiceover: "Galaxy Z Fold8. Yakin dipakai tiap hari.", onscreen: "Galaxy Z Fold8" } ] },
+  { title: "Padel replay", hook: "The phone that filmed the winning shot", beats: [
+    { time: "0–3s", visual: "Evening padel court in Jakarta; a half-folded Galaxy Z Fold8 stands on the bench, filming", voiceover: "Match kedua, siap?", onscreen: "" },
+    { time: "3–7s", visual: "Fast rally, a winning smash, friends cheer", voiceover: "Smash!", onscreen: "" },
+    { time: "7–11s", visual: "The group crowds around the unfolded Fold8 to watch the replay on the big screen", voiceover: "Replay-nya jelas banget.", onscreen: "Replay di layar lebar" },
+    { time: "11–15s", visual: "Selfie with the cover screen as the group poses; Samsung end card", voiceover: "Galaxy Z Fold8, teman main kamu.", onscreen: "Galaxy Z Fold8" } ] },
+  { title: "Nobar layar lebar", hook: "The best seat in the nobar", beats: [
+    { time: "0–3s", visual: "A packed café nobar; everyone strains to see a small TV far away", voiceover: "Nggak kelihatan…", onscreen: "" },
+    { time: "3–7s", visual: "He unfolds a Galaxy Z Fold8 on the table; friends lean in to watch the match", voiceover: "Sini, nonton di sini aja.", onscreen: "" },
+    { time: "7–11s", visual: "Goal! The table erupts; someone films the reaction on the cover screen", voiceover: "GOOOL!", onscreen: "Kursi terbaik buat nobar" },
+    { time: "11–15s", visual: "The Fold8 folds shut, ready for the next match; Samsung end card", voiceover: "Galaxy Z Fold8. Pilih foldable dengan yakin.", onscreen: "Galaxy Z Fold8" } ] },
 ];
+// Prompt style from "[CRE] Prompt Example - Samsung Snowball" (Cheil creative team)
+const DECK_EXAMPLES = `Key visual prompt example:
+POSE:
+Samsung Galaxy Z Fold 8 and a second phone sit on a floating yellow rubber duck on water. White background.
+OBJECT:
+Samsung Galaxy Fold 8 as the reference, the passport-shaped phone. DON'T CHANGE THE SHAPE OF THE PHONE. The phone shape needs to be exactly as real as the real phone.
+BACKGROUND:
+White limbo. Some objects for contextual supporting objects.
+LAYOUT:
+No text. No logo. I just need the image.
+CAMERA:
+Key visual camera. Samsung style. Editorial fashion. Exaggerated angle. Dynamic pose.
+LIGHTING AND TONE:
+White-ish, bright, natural light.
+
+Prompt-to-video example (follows the order of the images):
+SEQUENCE ACCORDING TO THE IMAGE REFERENCE:
+1. Side camera. Passport laid horizontally on white background
+2. Hand reaching and taking the passport
+3. It turns out behind the passport is hidden the super thin SAMSUNG GALAXY FOLD 8, laid in the exact same position. It's hidden because it's super thin
+4. The hand reaches both, and the background turns into an airport
+CAMERA: Slow camera movement. Still camera.
+AUDIO: No dialogue.`;
+const RULES = "Never show a competitor brand, logo or name: any other phone appears only as an unbranded dark silhouette. No text, captions, logos or watermarks in the image.";
 
 // ---------- actions ----------
 const A = {};
@@ -156,133 +222,231 @@ A.reset = async () => { if (!confirm("Start the demo again from a new brief?")) 
 A.switchTo = (r) => { S.role = r; save(); render(); };
 
 A.markFinal = () => {
-  readForm("brief", S.brief);
   S.started = true; S.elapsed = 0;
   advance("planner", "AM", "Marked the brief final. SLA clock started (5 business days, 45 working hours).");
 };
+
+// --- Strategic Planner ---
+const trendText = (t) => `Name: ${t.name}\nType: ${t.type}\nWhat's trending: ${t.what}\nSample content: ${t.linkNote}`;
+const styleExamples = () => TRENDS.filter((t) => t.links.length).map((t) => `Trend: ${t.name} (${t.type})\nInsight: ${t.sample.insight}\nSo What: ${t.sample.so_what}\nNow What: ${t.sample.now_what}\nStrategic Content Direction: ${t.sample.scd}`).join("\n\n");
+const SP_SYSTEM = "You are a Strategic Planner at Cheil Indonesia, a creative agency working for Samsung Indonesia. You turn social-listening trends into a sharp strategic direction for 15-second short-form videos. Be specific to Indonesia and to the brief. Never invent product specs or claims.";
 A.pickTrend = (id) => { S.trend = TRENDS.find((t) => t.id === id); save(); render(); };
 A.draftDirection = async () => {
   if (!S.trend) { toast("Pick a trend first."); return; }
   busy.dir = true; render();
   const out = await aiJSON(
-    `Brief:\n${briefText()}\n\nTrend from the Trend Library (social listening): ${S.trend.name} (${S.trend.growth}, ${S.trend.src}). ${S.trend.note}\n\nWrite the trend direction that completes this brief. Return JSON with keys: insight, angle, tone, post_time, dos, donts. Each value one or two short sentences, in English.`,
-    "You are a Strategic Planner at Cheil Indonesia, a creative agency working for Samsung Indonesia. You turn social-listening trends into a sharp creative direction for 15-second short-form videos. Be specific to Indonesia.");
-  S.direction = out && out.insight ? out : { ...SAMPLE_DIRECTION, _fb: true };
+    `Brief:\n${briefText()}\n\nSelected trend from the Trend Library (social listening):\n${trendText(S.trend)}\n\nWrite the trend direction that completes this brief. Use the same structure, length and voice as these write-ups from Cheil's social-listening reports:\n\n${styleExamples()}\n\nReturn JSON with keys: insight (what's trending and the consumer truth behind it), so_what (why does it matter?), now_what (what's the brand opportunity for Samsung, tied to the product in the brief?), scd (the Strategic Content Direction: one sharp line). One or two sentences each, in English.`,
+    SP_SYSTEM);
+  const notes = S.direction ? S.direction.notes : "";
+  S.direction = out && out.insight && out.scd ? { insight: out.insight, so_what: out.so_what || "", now_what: out.now_what || "", scd: out.scd, notes } : { ...S.trend.sample, notes, _fb: true };
+  S.dirVersions = 1;
   busy.dir = false; save(); render();
+};
+A.reviseDirection = async () => {
+  const ins = val("dirrev"); if (!ins) { toast("Type how the direction should change."); return; }
+  busy.dirrev = true; render();
+  const cur = { insight: S.direction.insight, so_what: S.direction.so_what, now_what: S.direction.now_what, scd: S.direction.scd };
+  const out = await aiJSON(
+    `Brief:\n${briefText()}\n\nTrend:\n${trendText(S.trend)}\n\nCurrent trend direction (JSON):\n${JSON.stringify(cur)}\n\nInstruction from the Strategic Planner: ${ins}\n\nRewrite the direction following the instruction. Change only what the instruction asks for; keep everything else. Return JSON with the same keys: insight, so_what, now_what, scd.`,
+    SP_SYSTEM);
+  if (out && out.insight && out.scd) { Object.assign(S.direction, { insight: out.insight, so_what: out.so_what || cur.so_what, now_what: out.now_what || cur.now_what, scd: out.scd }); delete S.direction._fb; S.dirVersions++; delete drafts.dirrev; log("SP", `Revised the trend direction by prompt: “${ins}”.`); }
+  else toast("The AI could not revise the direction right now. Edit it by hand instead.");
+  busy.dirrev = false; save(); render();
 };
 A.handToCW = () => {
   if (!S.direction) { toast("Draft or write the trend direction first."); return; }
-  readForm("dir", S.direction);
-  if (!S.look) S.look = S.direction.tone || "";
   advance("script", "SP", `Completed the brief with the trend direction (${S.trend ? S.trend.name : "no trend"}) and handed it to the Copywriter.`);
 };
+
+// --- Copywriter: up to 5 scripts, one video each ---
+const CW_SYSTEM = "You are a senior copywriter at Cheil Indonesia writing short-form video scripts for Samsung Indonesia. Scripts are fast, local and on-brand. Never invent prices, specs or claims not in the brief. Never name a competitor brand.";
+const SCRIPT_SHAPE = `{"title":"2-4 words","hook":"one line","beats":[{"time":"0–3s","visual":"what we see, one sentence","voiceover":"spoken line in the requested language","onscreen":"short on-screen text or empty"}]}`;
+const cwContext = () => `Brief:\n${briefText()}\n\nTrend direction from the Strategic Planner:\n${dirText()}\n\nCopywriter's form:\n- Hook style: ${S.form.hook}\n- Product focus: ${S.form.focus}\n- Must say: ${S.form.must}\n- Language: ${S.form.lang}\n- Notes: ${S.form.notes || "none"}`;
+const cleanScript = (o) => o && Array.isArray(o.beats) && o.beats.length ? { title: o.title || "Untitled", hook: o.hook || "", beats: o.beats.slice(0, 6).map((b) => ({ time: b.time || "", visual: b.visual || "", voiceover: b.voiceover || "", onscreen: b.onscreen || "" })), ver: 1 } : null;
+const sampleScript = (i) => ({ ...JSON.parse(JSON.stringify(SAMPLE_SCRIPTS[i % SAMPLE_SCRIPTS.length])), ver: 1, _fb: true });
 A.genScripts = async () => {
-  readForm("form", S.form);
+  const n = Math.max(1, Math.min(MAX_SCRIPTS, parseInt(S.form.n, 10) || 5));
+  if (S.scripts.length && !confirm(`Replace the ${S.scripts.length} current script(s) with ${n} new ones?`)) return;
   busy.scripts = true; render();
-  const n = Math.max(1, Math.min(4, parseInt(S.form.n, 10) || 3));
   const out = await aiJSON(
-    `Brief:\n${briefText()}\n\nTrend direction:\n${dirText()}\n\nCopywriter's form:\n- Hook style: ${S.form.hook}\n- Product focus: ${S.form.focus}\n- Must say: ${S.form.must}\n- Language: ${S.form.lang}\n- Notes: ${S.form.notes || "none"}\n\nWrite ${n} different script options for one 15-second vertical video. Return JSON: {"options":[{"title":"2-4 words","hook":"one line","beats":[{"time":"0–3s","visual":"what we see, one sentence","voiceover":"spoken line in the requested language","onscreen":"short on-screen text or empty"}]}]}. Each option has 4 beats that add up to 15 seconds. Use the product name exactly as given and include the mandatories.`,
-    "You are a senior copywriter at Cheil Indonesia writing short-form video scripts for Samsung Indonesia. Scripts are fast, local and on-brand. Never invent prices or claims not in the brief.");
-  S.options = out && Array.isArray(out.options) && out.options.length ? out.options.slice(0, n) : SAMPLE_OPTIONS.slice(0, n).map((o) => ({ ...o, _fb: true }));
-  S.pick = null; S.script = null;
-  busy.scripts = false; log("CW", `Generated ${S.options.length} AI script options.`); save(); render();
+    `${cwContext()}\n\nWrite ${n} different scripts. Each script is one separate 15-second vertical video, so make each a distinct idea built on the trend direction. Return JSON: {"scripts":[${SCRIPT_SHAPE}]}. Each script has 4 beats that add up to 15 seconds. Use the product name exactly as given and respect the mandatories.`, CW_SYSTEM);
+  const got = out && Array.isArray(out.scripts) ? out.scripts.map(cleanScript).filter(Boolean).slice(0, n) : [];
+  S.scripts = got.length ? got : Array.from({ length: n }, (_, i) => sampleScript(i));
+  busy.scripts = false; log("CW", `Generated ${S.scripts.length} AI scripts (one video each).`); save(); render();
 };
-A.usePick = (i) => { S.pick = +i; S.script = JSON.parse(JSON.stringify(S.options[+i])); S.scriptVersions = 1; save(); render(); };
-A.reviseScript = async () => {
-  readBeats();
-  const ins = val("revise"); if (!ins) { toast("Type how the script should change."); return; }
-  busy.revise = true; render();
+async function oneScript(avoid) {
+  const out = await aiJSON(`${cwContext()}\n\nOther scripts already written for this brief (do not repeat their ideas): ${avoid.join("; ") || "none"}.\n\nWrite ONE new script for a separate 15-second vertical video. Return only the JSON object: ${SCRIPT_SHAPE}. 4 beats adding up to 15 seconds.`, CW_SYSTEM);
+  return cleanScript(out && out.script ? out.script : out);
+}
+A.newScript = async (i) => {
+  i = +i; busy["s" + i] = true; render();
+  const s = await oneScript(S.scripts.filter((_, k) => k !== i).map((x) => x.title));
+  if (s) { S.scripts[i] = s; log("CW", `Wrote a new take for script ${i + 1}.`); } else toast("The AI could not write a new take right now.");
+  busy["s" + i] = false; save(); render();
+};
+A.addScript = async () => {
+  if (S.scripts.length >= MAX_SCRIPTS) return;
+  busy.add = true; render();
+  const s = await oneScript(S.scripts.map((x) => x.title));
+  S.scripts.push(s || sampleScript(S.scripts.length));
+  busy.add = false; log("CW", `Added script ${S.scripts.length}.`); save(); render();
+};
+A.delScript = (i) => { i = +i; if (!confirm(`Delete script ${i + 1}?`)) return; S.scripts.splice(i, 1); save(); render(); };
+A.reviseScript = async (i) => {
+  i = +i; const s = S.scripts[i];
+  const ins = val("rv_" + i); if (!ins) { toast("Type how the script should change."); return; }
+  busy["s" + i] = true; render();
   const out = await aiJSON(
-    `Current script (JSON):\n${JSON.stringify({ title: S.script.title, hook: S.script.hook, beats: S.script.beats })}\n\nBrief mandatories: ${S.brief.mandatories}\nInstruction from the copywriter: ${ins}\n\nRewrite the script following the instruction. Keep the same JSON shape and 4 beats adding up to 15 seconds. Return only the JSON object.`,
-    "You are a senior copywriter at Cheil Indonesia editing a 15-second script for Samsung Indonesia.");
-  if (out && Array.isArray(out.beats)) { S.script = { ...S.script, ...out }; S.scriptVersions++; log("CW", `Revised the script by prompt: “${ins}”.`); }
+    `Current script (JSON):\n${JSON.stringify({ title: s.title, hook: s.hook, beats: s.beats })}\n\nBrief mandatories: ${S.brief.mandatories}\nInstruction from the copywriter: ${ins}\n\nRewrite the script following the instruction. Keep the same JSON shape and 4 beats adding up to 15 seconds. Return only the JSON object.`,
+    CW_SYSTEM);
+  const r = cleanScript(out);
+  if (r) { S.scripts[i] = { ...r, ver: (s.ver || 1) + 1 }; delete drafts["rv_" + i]; log("CW", `Revised script ${i + 1} by prompt: “${ins}”.`); }
   else toast("The AI could not revise the script right now. Edit it by hand instead.");
-  busy.revise = false; save(); render();
+  busy["s" + i] = false; save(); render();
 };
-A.scriptFinal = () => {
-  readBeats();
-  S.frames = S.script.beats.map((b, i) => ({ beat: i, prompt: "", versions: [], cur: -1 }));
-  advance("images", "CW", `Marked script “${S.script.title}” final (version ${S.scriptVersions}).`);
+A.scriptsFinal = () => {
+  if (!S.scripts.length) { toast("Write at least one script first."); return; }
+  S.boards = S.scripts.map(() => newBoard(2)); S.selBoard = 0;
+  advance("images", "CW", `Marked ${S.scripts.length} script(s) final: ${S.scripts.map((s) => "“" + s.title + "”").join(", ")}. One board and one video per script.`);
+};
+
+// --- Art Director: one board per script ---
+function newBoard(n) {
+  return { n, p: { object: "", background: "", layout: "", camera: "", lighting: "" }, frames: Array.from({ length: n }, () => newFrame()),
+    video: { sequence: "", camera: "", audio: "" }, drafted: false, status: "draft", fb: [], check: null, selFrame: 0 };
+}
+const newFrame = () => ({ pose: "", versions: [], cur: -1, busy: false });
+const editable = (b) => (S.stage === "images" && (b.status === "draft" || b.status === "int_rev")) || (S.stage === "board_revision" && b.status === "client_rev");
+A.selBoard = (i) => { S.selBoard = +i; save(); render(); };
+A.setN = (v, el) => {
+  const b = S.boards[+el.dataset.i]; const n = Math.max(1, Math.min(3, +v));
+  while (b.frames.length < n) b.frames.push(newFrame());
+  b.frames.length = n; b.n = n; b.selFrame = Math.min(b.selFrame, n - 1); save(); render();
+};
+function boardFallback(b, s) {
+  const n = b.n, L = s.beats.length;
+  const poses = Array.from({ length: n }, (_, k) => s.beats[Math.round(n === 1 ? (L - 1) / 2 : k * (L - 1) / (n - 1))].visual);
+  return { poses, object: `${S.brief.product} as the reference. DON'T CHANGE THE SHAPE OF THE PHONE. The phone shape needs to be exactly as real as the real phone.`,
+    background: "White limbo. Some objects for contextual supporting objects.", layout: "No text. No logo. I just need the image.",
+    camera: "Key visual camera. Samsung style. Editorial fashion. Exaggerated angle. Dynamic pose.", lighting: "White-ish, bright, natural light.",
+    video: { sequence: "SEQUENCE FOLLOW THE ORDER OF THE IMAGES PROVIDED:\n" + poses.map((p, k) => `${k + 1}. ${p}`).join("\n"), camera: "Slow camera movement. Still camera.", audio: "No dialogue. Voice-over and music are added in post." } };
+}
+async function draftBoard(i) {
+  const b = S.boards[i], s = S.scripts[i];
+  b.busy = true; render();
+  const out = await aiJSON(
+    `Brief:\n${briefText()}\n\nTrend direction:\n${dirText()}\n\nScript ${i + 1} (one 15-second video):\n${scriptText(s)}\n\nWrite the image prompts for this script's board: ${b.n === 1 ? "one composed key visual" : b.n + " key visual stills in order (for example a start frame and an end frame)"} that production will animate into the video in Flow. Follow Cheil's prompt format exactly, like these examples:\n\n${DECK_EXAMPLES}\n\nReturn JSON: {"poses":[${b.n} strings, the POSE for each image in order],"object":"...","background":"...","layout":"...","camera":"...","lighting":"...","video":{"sequence":"numbered steps that follow the order of the images","camera":"...","audio":"..."}}.\nRules: OBJECT names ${S.brief.product} as the reference and says DON'T CHANGE THE SHAPE OF THE PHONE. LAYOUT says No text. No logo. Competitor phones appear only as an unbranded dark silhouette. Keep each field short and concrete. English.`,
+    "You are a senior Art Director at Cheil Indonesia writing image-generation prompts for Samsung Indonesia key visuals. You write short, sectioned prompts in the team's house format.");
+  const fb = boardFallback(b, s);
+  const ok = out && Array.isArray(out.poses) && out.poses.length && out.object;
+  const r = ok ? out : fb;
+  b.frames.forEach((f, k) => { f.pose = String((r.poses || [])[k] || fb.poses[k]); });
+  PROMPT_FIELDS.forEach(([k]) => { b.p[k] = String(r[k] || fb[k]); });
+  const v = r.video || {}; VIDEO_FIELDS.forEach(([k]) => { b.video[k] = String(v[k] || fb.video[k]); });
+  b.drafted = true; b._fb = !ok; b.busy = false; render();
+}
+A.draftBoard = async (i) => { await draftBoard(+i); log("AD", `Drafted the prompts for board ${+i + 1}.`); save(); render(); };
+A.draftAll = async () => {
+  const idx = S.boards.map((b, i) => i).filter((i) => editable(S.boards[i]));
+  busy.all = true; render();
+  await Promise.all(idx.map(draftBoard));
+  busy.all = false; log("AD", `AI drafted the prompts for ${idx.length} board(s).`); save(); render();
+};
+function kvPrompt(b, k, hasProduct, hasFirst) {
+  const refs = [];
+  if (hasProduct) refs.push(`Attached image ${refs.length + 1} is the actual product photo of the ${S.brief.product}: copy its exact shape, proportions, hinge, cameras and colour.`);
+  if (hasFirst) refs.push(`Attached image ${refs.length + 1} is image 1 of this same board: keep the same setting, people, styling and product so the images read as one sequence.`);
+  if (!hasProduct) refs.push("No product photo is attached: show a slim book-style foldable phone with no visible branding.");
+  return `POSE:\n${b.frames[k].pose}\n\nOBJECT:\n${b.p.object}\n\nBACKGROUND:\n${b.p.background}\n\nLAYOUT:\n${b.p.layout}\n\nCAMERA:\n${b.p.camera}\n\nLIGHTING AND TONE:\n${b.p.lighting}\n\n${b.n > 1 ? `This is image ${k + 1} of ${b.n} in a sequence for one 15-second video.\n` : ""}${refs.join("\n")}\n${RULES}\nVertical 9:16.`;
+}
+async function genFrame(b, i, k, first) {
+  const f = b.frames[k]; f.busy = true; render();
+  const prompt = kvPrompt(b, k, !!S.productRef, !!first);
+  let img = await aiImage(prompt, [S.productRef, first]);
+  const fb = !img; if (!img) img = placeholder(`Board ${i + 1} · image ${k + 1}`, i + k, f.pose);
+  f.versions.push({ img, prompt, label: f.versions.length ? "New take" : "Generated", fb }); f.cur = f.versions.length - 1; f.busy = false; render();
+  return fb ? null : img;
+}
+async function genBoard(i) {
+  const b = S.boards[i];
+  if (!b.drafted || b.frames.some((f) => !f.pose.trim())) await draftBoard(i);
+  const first = await genFrame(b, i, 0, null);
+  await Promise.all(b.frames.slice(1).map((_, j) => genFrame(b, i, j + 1, first)));
+}
+A.genBoard = async (i) => { i = +i; busy["b" + i] = true; render(); await genBoard(i); busy["b" + i] = false; log("AD", `AI generated ${S.boards[i].n} image(s) for board ${i + 1}.`); save(); render(); };
+A.genAll = async () => {
+  const idx = S.boards.map((b, i) => i).filter((i) => editable(S.boards[i]));
+  busy.all = true; render();
+  await Promise.all(idx.map(genBoard));
+  busy.all = false; log("AD", `AI generated the images for ${idx.length} board(s).`); save(); render();
+};
+A.selFrame = (v) => { const [i, k] = v.split(":").map(Number); S.boards[i].selFrame = k; save(); render(); };
+A.selVer = (v) => { const [i, k, n] = v.split(":").map(Number); S.boards[i].frames[k].cur = n; save(); render(); };
+A.refine = async (i) => {
+  i = +i; const b = S.boards[i], k = b.selFrame, f = b.frames[k];
+  const ins = val("refine_" + i); if (!ins) { toast("Type the revision prompt first."); return; }
+  if (!f || f.cur < 0) return;
+  f.busy = true; busy["r" + i] = true; render();
+  const p = `Revision prompt:\n${ins}\n\nKeep everything else in the image the same (composition, setting, people and product) unless the revision says otherwise. DON'T CHANGE THE SHAPE OF THE PHONE.${S.productRef ? " The second attached image is the actual product photo for reference." : ""}\n${RULES}\nVertical 9:16.`;
+  let img = await aiImage(p, [f.versions[f.cur].img, S.productRef]);
+  const fb = !img; if (!img) img = placeholder(`Board ${i + 1} · image ${k + 1} · edited`, i + k + 2, ins);
+  f.versions.push({ img, prompt: p, label: ins, fb }); f.cur = f.versions.length - 1; f.busy = false; busy["r" + i] = false; if (!fb) delete drafts["refine_" + i];
+  log("AD", `Revised board ${i + 1}, image ${k + 1} by prompt: “${ins}”.`); save(); render();
+};
+A.regenFrame = async (i) => {
+  i = +i; const b = S.boards[i], k = b.selFrame; busy["r" + i] = true; render();
+  const first = k > 0 && b.frames[0].cur >= 0 && !b.frames[0].versions[b.frames[0].cur].fb ? b.frames[0].versions[b.frames[0].cur].img : null;
+  await genFrame(b, i, k, first); busy["r" + i] = false; save(); render();
 };
 A.uploadRef = (v, el) => {
   const f = el.files && el.files[0]; if (!f) return;
-  const r = new FileReader(); r.onload = async () => { S.productRef = await shrink(r.result, 768); save(); render(); toast("Product reference added. New frames will follow it."); }; r.readAsDataURL(f);
+  const r = new FileReader(); r.onload = async () => { S.productRef = await shrink(r.result, 768); save(); render(); toast("Product photo added. New images will follow it."); }; r.readAsDataURL(f);
 };
 A.clearRef = () => { S.productRef = null; save(); render(); };
-function framePrompt(b) {
-  const ref = S.productRef ? "Use the attached product photo as the exact reference for the phone's design and colour; show it naturally in the scene." : "If a smartphone appears, keep it generic and partly out of focus; do not show any brand.";
-  return `Vertical 9:16 photorealistic advertising still for a 15-second short-form video by Samsung Indonesia.\nScene: ${b.visual}\nSetting: contemporary urban Indonesia, Indonesian people.\nLook and mood: ${S.look || "warm, cinematic, natural light"}.\n${ref}\nDo not render any text, captions, logos, watermarks or brand names.`;
-}
-A.genFrames = async () => {
-  S.look = val("look") || S.look;
-  busy.frames = true; render();
-  S.frames.forEach((f) => { f.busy = true; }); render();
-  await Promise.all(S.frames.map(async (f, i) => {
-    const b = S.script.beats[i];
-    let img = await aiImage(framePrompt(b), [S.productRef]);
-    const fb = !img; if (!img) img = placeholder(`Frame ${i + 1} · ${b.time}`, i, b.visual);
-    f.versions.push({ img, prompt: "Generated from beat " + b.time, fb });
-    f.cur = f.versions.length - 1; f.busy = false;
-    render();
-  }));
-  save();
-  busy.frames = false; log("AD", `AI generated ${S.frames.length} still images for the script.`); save(); render();
-};
-A.selFrame = (i) => { S.selFrame = +i; save(); render(); };
-A.selVer = (v) => { const [i, k] = v.split(":").map(Number); S.frames[i].cur = k; save(); render(); };
-A.refine = async () => {
-  const ins = val("refine"); if (!ins) { toast("Type how the frame should change."); return; }
-  const fr = S.frames[S.selFrame]; if (!fr || fr.cur < 0) return;
-  busy.refine = true; fr.busy = true; render();
-  const base = fr.versions[fr.cur].img;
-  const p = `Edit this image: ${ins}.\nKeep the same scene, framing, people and product unless the instruction says otherwise. Vertical 9:16. No text, captions, logos or watermarks.`;
-  let img = await aiImage(p, [base, S.productRef]);
-  const fb = !img; if (!img) img = placeholder(`Frame ${S.selFrame + 1} · edited`, S.selFrame + 2, ins);
-  fr.versions.push({ img, prompt: ins, fb }); fr.cur = fr.versions.length - 1; fr.busy = false; busy.refine = false;
-  log("AD", `Refined frame ${S.selFrame + 1} by prompt: “${ins}”.`); save(); render();
-};
-A.regenFrame = async () => {
-  const fr = S.frames[S.selFrame]; if (!fr) return;
-  busy.refine = true; fr.busy = true; render();
-  let img = await aiImage(framePrompt(S.script.beats[S.selFrame]) + "\nTry a different composition.", [S.productRef]);
-  const fb = !img; if (!img) img = placeholder(`Frame ${S.selFrame + 1} · new`, S.selFrame + 3, S.script.beats[S.selFrame].visual);
-  fr.versions.push({ img, prompt: "Regenerated", fb }); fr.cur = fr.versions.length - 1; fr.busy = false; busy.refine = false; save(); render();
-};
 A.submitBoard = () => {
-  if (S.frames.some((f) => f.cur < 0)) { toast("Generate all frames first."); return; }
-  const from = S.stage;
-  if (from === "board_revision") advance("joint_rereview", "AD", "Revised the board by prompt after Samsung's feedback; booked the joint re-review.");
-  else advance("internal_board", "AD", "Submitted the board (script + still images) for internal review.");
+  const idx = S.boards.map((b, i) => i).filter((i) => editable(S.boards[i]));
+  const missing = idx.filter((i) => S.boards[i].frames.some((f) => f.cur < 0));
+  if (missing.length) { toast(`Generate the images for board ${missing.map((i) => i + 1).join(", ")} first.`); S.selBoard = missing[0]; render(); return; }
+  if (S.stage === "board_revision") {
+    idx.forEach((i) => { S.boards[i].status = "joint"; });
+    advance("joint_rereview", "AD", `Revised board ${idx.map((i) => i + 1).join(", ")} by prompt after Samsung's feedback; booked the joint re-review.`);
+  } else {
+    idx.forEach((i) => { S.boards[i].status = "internal"; S.boards[i].check = null; });
+    advance("internal_board", "AD", `Submitted ${idx.length} board(s) (script + images + video prompt) for internal review.`);
+  }
 };
-A.aiCheck = async () => {
+
+// --- Reviews: one decision per board ---
+const PENDING = { internal_board: "internal", client_board: "client", joint_rereview: "joint" };
+const pendingBoards = () => S.boards.map((b, i) => i).filter((i) => S.boards[i].status === PENDING[S.stage]);
+A.aiCheckAll = async () => {
   busy.check = true; render();
-  const out = await aiJSON(
-    `Brief:\n${briefText()}\n\nScript (JSON):\n${JSON.stringify(S.script.beats)}\n\nCheck the script against the brief. Return JSON {"checks":[{"item":"short name","status":"pass" or "warn","note":"one sentence"}]} with 5 checks: on brief, key message, mandatories, product naming, tone for the audience.`,
-    "You are a meticulous Executive Creative Director at Cheil Indonesia reviewing work for Samsung Indonesia before it goes to the client.");
-  S.aiCheck = out && Array.isArray(out.checks) ? out.checks : [
-    { item: "On brief", status: "pass", note: "The countdown idea drives pre-orders before 12.12.", _fb: true },
-    { item: "Key message", status: "pass", note: "Pre-order and bundle gift both appear." },
-    { item: "Mandatories", status: "warn", note: "Price and bundle terms must stay on screen for at least 3 seconds; check the last beat." },
-    { item: "Product naming", status: "pass", note: "Galaxy Z Flip7 is named correctly." },
-    { item: "Tone", status: "pass", note: "Casual Bahasa Indonesia fits 18–30 shopping-app users." } ];
+  await Promise.all(pendingBoards().map(async (i) => {
+    const out = await aiJSON(
+      `Brief:\n${briefText()}\n\nTrend direction:\n${dirText()}\n\nScript (JSON):\n${JSON.stringify(S.scripts[i].beats)}\n\nImage prompt OBJECT/LAYOUT: ${S.boards[i].p.object} / ${S.boards[i].p.layout}\n\nCheck this board against the brief. Return JSON {"checks":[{"item":"short name","status":"pass" or "warn","note":"one sentence"}]} with 5 checks: on brief, trend direction, key message, mandatories (product shape, competitor silhouette, end card), tone for the audience.`,
+      "You are a meticulous Executive Creative Director at Cheil Indonesia reviewing work for Samsung Indonesia before it goes to the client.");
+    S.boards[i].check = out && Array.isArray(out.checks) ? out.checks.slice(0, 6) : [
+      { item: "On brief", status: "pass", note: "The idea answers foldable durability worries.", _fb: true },
+      { item: "Trend direction", status: "pass", note: `Built on ${S.trend ? S.trend.name : "the selected trend"}.` },
+      { item: "Key message", status: "pass", note: "“Choose your foldable with confidence” lands in the last beat." },
+      { item: "Mandatories", status: "warn", note: "Check the competitor phone stays an unbranded silhouette in every image." },
+      { item: "Tone", status: "pass", note: "Casual Bahasa Indonesia fits 22–35 upgraders." } ];
+  }));
   busy.check = false; save(); render();
 };
-A.pickDecision = (v) => { S.decision[S.stage] = v; save(); render(); };
+A.pickDecision = (v) => {
+  if (v.includes(":")) { const [i, d] = v.split(":"); S.decision[S.stage] = { ...(typeof S.decision[S.stage] === "object" ? S.decision[S.stage] : {}), [i]: d }; }
+  else S.decision[S.stage] = v;
+  save(); render();
+};
 A.decide = () => {
-  const d = S.decision[S.stage]; const c = val("comment");
+  const st = S.stage, who = stageOf(st).owner;
+  if (PENDING[st]) return decideBoards(st, who);
+  const d = S.decision[st]; const c = val("comment"); delete drafts.comment;
   if (!d) { toast("Choose a decision first."); return; }
-  const who = stageOf(S.stage).owner;
-  if (c) S.comments.unshift({ stage: S.stage, by: who, text: c, clock: now() });
-  const st = S.stage;
-  if (st === "internal_board") {
-    if (d === "approve") advance("client_board", "CL", "Approved the board internally. Account sent it to Samsung.");
-    else { S.rounds.board++; advance("images", "CL", "Sent the board back for revision by prompt." + (c ? ` “${c}”` : "")); }
-  } else if (st === "client_board") {
-    if (d === "approve") advance("production", "SS", "Samsung approved the board. Production starts.");
-    else advance("board_revision", "SS", "Samsung requested changes to the board (one round)." + (c ? ` “${c}”` : ""));
-  } else if (st === "joint_rereview") {
-    advance("production", "SS", "Cheil and Samsung re-reviewed the board together and approved it.");
-  } else if (st === "internal_content") {
+  if (c) S.comments.unshift({ stage: st, by: who, text: c, clock: now() });
+  delete S.decision[st];
+  if (st === "internal_content") {
     if (d === "approve") advance("client_content", "CL", "Approved the videos internally. Account sent them to Samsung.");
     else advance("production", "CL", "Sent the videos back to production." + (c ? ` “${c}”` : ""));
   } else if (st === "client_content") {
@@ -292,29 +456,67 @@ A.decide = () => {
     advance("closed", "CL", "Internal re-review passed. Account closed the task; further changes need a new brief.");
   }
 };
+function decideBoards(st, who) {
+  const idx = pendingBoards();
+  if (st === "joint_rereview") {
+    idx.forEach((i) => { S.boards[i].status = "done"; }); S.boards.forEach((b) => { if (b.status === "client_ok") b.status = "done"; });
+    return advance("production", "SS", `Cheil and Samsung re-reviewed board ${idx.map((i) => i + 1).join(", ")} together and approved. Production starts.`);
+  }
+  const dec = typeof S.decision[st] === "object" ? S.decision[st] : {};
+  const open = idx.filter((i) => !dec[i]);
+  if (open.length) { toast(`Choose approve or revise for board ${open.map((i) => i + 1).join(", ")}.`); return; }
+  const ok = [], rev = [];
+  idx.forEach((i) => {
+    const c = val("cm_" + i); delete drafts["cm_" + i]; const b = S.boards[i];
+    if (c) { S.comments.unshift({ stage: st, by: who, text: `Board ${i + 1}: ${c}`, clock: now() }); }
+    if (dec[i] === "approve") { ok.push(i); b.status = st === "internal_board" ? "int_ok" : "client_ok"; }
+    else { rev.push(i); b.status = st === "internal_board" ? "int_rev" : "client_rev"; b.fb.unshift({ stage: st, by: who, text: c || "Please revise." }); }
+  });
+  delete S.decision[st];
+  const list = (a) => a.map((i) => i + 1).join(", ");
+  const summary = `${ok.length ? "Approved board " + list(ok) + ". " : ""}${rev.length ? "Sent board " + list(rev) + " back for revision." : ""}`.trim();
+  if (st === "internal_board") {
+    if (rev.length) { S.rounds.board++; S.selBoard = rev[0]; return advance("images", "CL", summary); }
+    S.boards.forEach((b) => { b.status = "client"; });
+    return advance("client_board", "CL", summary + " Account sent all boards to Samsung.");
+  }
+  if (rev.length) { S.selBoard = rev[0]; return advance("board_revision", "SS", summary + " One revision round."); }
+  S.boards.forEach((b) => { b.status = "done"; });
+  advance("production", "SS", "Samsung approved every board. Production starts.");
+}
+
+// --- Production: one video per script ---
 A.render = async () => {
   busy.render = true; render();
   await new Promise((r) => setTimeout(r, 1800));
-  const hooks = ["3 hari lagi", "2 hari lagi", "Besok 12.12", "Malam ini", "Last call"];
-  S.videos = Array.from({ length: S.brief.videos || 5 }, (_, v) => ({
-    name: `V${v + 1} · ${hooks[v] || "Variant " + (v + 1)}`,
-    caps: S.script.beats.map((b, i) => (i === 0 ? hooks[v] || b.onscreen : b.onscreen) || ""),
-  }));
+  S.videos = S.scripts.map((s, i) => ({ board: i, name: `V${i + 1} · ${s.title}`, caps: s.beats.map((b) => b.onscreen || "") }));
   busy.render = false;
-  if (S.stage === "content_revision") { readCaps(); advance("internal_rereview", "VE", "Applied Samsung's changes and re-rendered the videos."); }
-  else { log("VE", `Rendered ${S.videos.length} variants (Flow, After Effects, Suno) and uploaded them.`); save(); render(); }
+  log("VE", `Produced ${S.videos.length} video(s), one per script (Flow, After Effects, Suno), and uploaded them.`); save(); render();
 };
-A.sendContent = () => { if (!S.videos.length) { toast("Render and upload the variants first."); return; } advance("internal_content", "VE", `Uploaded ${S.videos.length} videos for internal content review.`); };
-A.applyRevision = () => { readCaps(); advance("internal_rereview", "VE", "Applied Samsung's changes to the on-screen text and re-rendered the videos."); };
+A.sendContent = () => { if (!S.videos.length) { toast("Produce and upload the videos first."); return; } advance("internal_content", "VE", `Uploaded ${S.videos.length} videos for internal content review.`); };
+A.applyRevision = () => { advance("internal_rereview", "VE", "Applied Samsung's changes to the on-screen text and re-rendered the videos."); };
 A.play = (i) => playVideo(+i);
 
-// ---------- form readers ----------
-function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ""; }
-function readForm(prefix, obj) { document.querySelectorAll(`[data-f^="${prefix}."]`).forEach((el) => { obj[el.dataset.f.split(".")[1]] = el.value; }); }
-function readBeats() { document.querySelectorAll("[data-beat]").forEach((el) => { const [i, k] = el.dataset.beat.split(":"); S.script.beats[+i][k] = el.value; }); }
-function readCaps() { document.querySelectorAll("[data-cap]").forEach((el) => { const [v, i] = el.dataset.cap.split(":"); S.videos[+v].caps[+i] = el.value; }); }
-const briefText = () => `Campaign: ${S.brief.campaign}\nProduct: ${S.brief.product}\nObjective: ${S.brief.objective}\nKey message: ${S.brief.message}\nAudience: ${S.brief.audience}\nChannels: ${S.brief.channels}\nReady to post: ${S.brief.ready}\nMandatories: ${S.brief.mandatories}\nOutput: ${S.brief.videos} short-form videos, 15 seconds each`;
-const dirText = () => S.direction ? `Trend: ${S.trend ? S.trend.name : "-"}\nInsight: ${S.direction.insight}\nAngle: ${S.direction.angle}\nTone: ${S.direction.tone}\nPost time: ${S.direction.post_time}\nDo: ${S.direction.dos}\nDon't: ${S.direction.donts}` : "none";
+// ---------- form sync: every input writes straight into the state ----------
+const drafts = {};           // ui-only: text typed in prompt / comment boxes, kept across redraws
+function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : (drafts[id] || "").trim(); }
+const BOUND = "[data-f],[data-beat],[data-bp],[data-pose],[data-vp],[data-cap]";
+function syncAll() {
+  document.querySelectorAll("[data-f]").forEach((el) => {
+    if (el.readOnly || el.disabled) return;
+    const [grp, key] = el.dataset.f.split(".");
+    const obj = grp === "brief" ? S.brief : grp === "form" ? S.form : grp === "dir" ? S.direction : null;
+    if (obj) obj[key] = el.value;
+  });
+  document.querySelectorAll("[data-beat]").forEach((el) => { if (el.readOnly) return; const [s, i, k] = el.dataset.beat.split(":"); if (S.scripts[+s]) S.scripts[+s].beats[+i][k] = el.value; });
+  document.querySelectorAll("[data-bp]").forEach((el) => { if (el.readOnly) return; const [i, k] = el.dataset.bp.split(":"); if (S.boards[+i]) S.boards[+i].p[k] = el.value; });
+  document.querySelectorAll("[data-pose]").forEach((el) => { if (el.readOnly) return; const [i, k] = el.dataset.pose.split(":"); if (S.boards[+i] && S.boards[+i].frames[+k]) S.boards[+i].frames[+k].pose = el.value; });
+  document.querySelectorAll("[data-vp]").forEach((el) => { if (el.readOnly) return; const [i, k] = el.dataset.vp.split(":"); if (S.boards[+i]) S.boards[+i].video[k] = el.value; });
+  document.querySelectorAll("[data-cap]").forEach((el) => { if (el.readOnly) return; const [v, i] = el.dataset.cap.split(":"); if (S.videos[+v]) S.videos[+v].caps[+i] = el.value; });
+}
+const briefText = () => `Campaign: ${S.brief.campaign}\nProduct: ${S.brief.product}\nObjective: ${S.brief.objective}\nKey message: ${S.brief.message}\nAudience: ${S.brief.audience}\nChannels: ${S.brief.channels}\nReady to post: ${S.brief.ready}\nMandatories: ${S.brief.mandatories}\nOutput: up to ${S.brief.videos} short-form videos, 15 seconds each, one script per video`;
+const dirText = () => S.direction ? `Trend: ${S.trend ? S.trend.name + " (" + S.trend.type + ")" : "-"}\n${DIR_FIELDS.map(([k, l]) => `${l}: ${S.direction[k]}`).join("\n")}\nPlanner's notes: ${S.direction.notes || "none"}` : "none";
+const scriptText = (s) => `Title: ${s.title}\nHook: ${s.hook}\n${s.beats.map((b) => `${b.time} | Visual: ${b.visual} | VO: ${b.voiceover} | On screen: ${b.onscreen || "-"}`).join("\n")}`;
 
 // ---------- video player ----------
 let timers = {};
@@ -322,17 +524,22 @@ function playVideo(v) {
   const el = document.querySelector(`[data-player="${v}"]`); if (!el) return;
   clearInterval(timers[v]); el.classList.remove("ended");
   const imgs = el.querySelectorAll("img"); const cap = el.querySelector(".cap"); const bar = el.querySelector(".prog i");
-  const caps = S.videos[v].caps; const n = imgs.length; let t = 0; const per = 15000 / n;
-  const show = (k) => { imgs.forEach((im, j) => im.classList.toggle("on", j === k)); cap.textContent = caps[k] || ""; };
-  show(0); bar.style.width = "0%";
-  timers[v] = setInterval(() => { t += 100; bar.style.width = Math.min(100, t / 150) + "%"; const k = Math.min(n - 1, Math.floor(t / per)); show(k); if (t >= 15000) { clearInterval(timers[v]); el.classList.add("ended"); } }, 100);
+  const caps = S.videos[v].caps; const n = imgs.length || 1, m = caps.length || 1; let t = 0;
+  const show = (k, c) => { imgs.forEach((im, j) => im.classList.toggle("on", j === k)); cap.textContent = caps[c] || ""; };
+  show(0, 0); bar.style.width = "0%";
+  timers[v] = setInterval(() => { t += 100; bar.style.width = Math.min(100, t / 150) + "%"; show(Math.min(n - 1, Math.floor(t / (15000 / n))), Math.min(m - 1, Math.floor(t / (15000 / m)))); if (t >= 15000) { clearInterval(timers[v]); el.classList.add("ended"); } }, 100);
 }
 
 // ---------- views ----------
 function render() {
   const app = document.getElementById("app");
   const st = stageOf(S.stage);
+  const y = window.scrollY, ae = document.activeElement, fid = ae && ae.id;
+  let ss = null, se = null; try { ss = ae.selectionStart; se = ae.selectionEnd; } catch (e) { /* not a text field */ }
   app.innerHTML = topbar() + `<div class="wrap">${head()}${stepper()}${slaBar()}<div class="grid"><div class="main">${stageView(st)}</div><div class="side">${sideView()}</div></div></div>`;
+  Object.entries(drafts).forEach(([id, v]) => { const el = document.getElementById(id); if (el && !el.value) el.value = v; });
+  if (fid && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) { const el = document.getElementById(fid); if (el) { el.focus({ preventScroll: true }); try { if (ss != null) el.setSelectionRange(ss, se); } catch (e) { /* ignore */ } } }
+  window.scrollTo(0, y);
 }
 function topbar() {
   const opts = Object.entries(ROLES).map(([k, v]) => `<option value="${k}"${S.role === k ? " selected" : ""}>${esc(v)}</option>`).join("");
@@ -344,7 +551,8 @@ function topbar() {
   <button class="btn sec small" data-act="reset">Reset demo</button></header>`;
 }
 function head() {
-  return `<div class="head"><div><h1>${esc(S.brief.campaign)}</h1><p>${esc(S.brief.product)} · ${S.brief.videos} short-form videos, 15 s each · BAU workflow</p></div>
+  const n = S.boards.length || S.brief.videos;
+  return `<div class="head"><div><h1>${esc(S.brief.campaign)}</h1><p>${esc(S.brief.product)} · ${S.boards.length ? n : "up to " + n} short-form videos, 15 s each, one script per video · BAU workflow</p></div>
   <div class="actions"><span class="pill bau">BAU</span><span class="pill navy">Now: ${esc(stageOf(S.stage).label)}</span></div></div>`;
 }
 function stepper() {
@@ -368,6 +576,7 @@ function slaBar() {
 function waitingFor(st) {
   return `<div class="waiting"><span>This step is with the <b>${esc(ROLES[st.owner])}</b>. You're viewing as ${esc(ROLES[S.role])}.</span><button class="btn small" data-act="switchTo" data-v="${st.owner}">Switch to ${esc(ROLES[st.owner].split(" (")[0])}</button></div>`;
 }
+const spin = (on, busyTxt, txt) => on ? `<span class="spinner"></span> ${busyTxt}` : txt;
 function stageView(st) {
   const mine = S.role === st.owner || (st.id === "joint_rereview" && S.role === "CL") || (st.id === "board_revision" && S.role === "CW");
   const bp = (t) => `<p class="bpmn">BPMN step: ${esc(t)}</p>`;
@@ -376,19 +585,12 @@ function stageView(st) {
   switch (st.id) {
     case "brief": return `<section class="card"><h2>New brief <span class="pill" style="background:#ECECF1">Draft</span></h2>${bp("Account · Prepare & finalize brief, create task")}${wait}
       <div class="g2">${fld("brief.campaign", "Campaign", S.brief.campaign, ro)}${fld("brief.product", "Product", S.brief.product, ro)}</div>
-      ${fld("brief.objective", "Objective", S.brief.objective, ro)}${area("brief.message", "Key message", S.brief.message, ro, 2)}
+      ${area("brief.objective", "Objective", S.brief.objective, ro, 2)}${area("brief.message", "Key message", S.brief.message, ro, 2)}
       <div class="g2">${fld("brief.audience", "Target audience", S.brief.audience, ro)}${fld("brief.channels", "Channels", S.brief.channels, ro)}</div>
-      <div class="g2">${fld("brief.ready", "Ready to post", S.brief.ready, ro)}${fld("brief.videos", "Videos", S.brief.videos, true)}</div>
+      <div class="g2">${fld("brief.ready", "Ready to post", S.brief.ready, ro)}${fld("brief.videos", "Videos (max, one script each)", S.brief.videos, true)}</div>
       ${area("brief.mandatories", "Mandatories", S.brief.mandatories, ro, 2)}
       ${mine ? `<div class="actions"><button class="btn" data-act="markFinal">Mark brief final · start SLA clock</button><span class="note">Clarify open questions with Samsung before this: clarification is outside the SLA.</span></div>` : ""}</section>`;
-    case "planner": return `<section class="card"><h2>Complete the brief <span class="pill ok">Step: 2 h</span></h2>${bp("Strategic Planner · Complete brief with trend direction (reads the Trend Library)")}${wait}
-      <div class="ro">${roBrief()}</div></section>
-      <section class="card"><h2>Trend Library <span class="note">Social listening · sample data until the SONAR API is connected</span></h2>
-      <div class="g2">${TRENDS.map((t) => `<div class="trend${S.trend && S.trend.id === t.id ? " sel" : ""}"><div class="t"><span>${esc(t.name)}</span><span class="pill ok">${esc(t.growth)}</span></div><p class="muted">${esc(t.src)} · ${esc(t.window)}</p><p style="margin:0;font-size:13px">${esc(t.note)}</p>${mine ? `<button class="btn sec small" data-act="pickTrend" data-v="${t.id}">${S.trend && S.trend.id === t.id ? "Selected" : "Use this trend"}</button>` : ""}</div>`).join("")}</div></section>
-      <section class="card"><h2>Trend direction ${S.direction && S.direction._fb ? '<span class="tag-fb">sample</span>' : S.direction ? '<span class="pill ok">AI draft · edit freely</span>' : ""}</h2>
-      ${mine ? `<div class="actions"><button class="btn ai" data-act="draftDirection"${busy.dir ? " disabled" : ""}>${busy.dir ? '<span class="spinner"></span> Drafting…' : "Draft direction with AI"}</button><span class="note">Uses the brief + the selected trend</span></div>` : ""}
-      ${S.direction ? `<div class="g2">${area("dir.insight", "Insight", S.direction.insight, ro, 3)}${area("dir.angle", "Creative angle", S.direction.angle, ro, 3)}</div><div class="g2">${fld("dir.tone", "Tone and look", S.direction.tone, ro)}${fld("dir.post_time", "Post time", S.direction.post_time, ro)}</div><div class="g2">${area("dir.dos", "Do", S.direction.dos, ro, 2)}${area("dir.donts", "Don't", S.direction.donts, ro, 2)}</div>` : '<p class="muted">Pick a trend, then let the AI draft the direction.</p>'}
-      ${mine && S.direction ? `<div class="actions"><button class="btn" data-act="handToCW">Hand off to Copywriter</button></div>` : ""}</section>`;
+    case "planner": return plannerView(mine, wait, bp);
     case "script": return scriptView(mine, wait, bp);
     case "images": case "board_revision": return imagesView(st, mine, wait, bp);
     case "internal_board": case "client_board": case "joint_rereview": return boardReview(st, mine, wait, bp);
@@ -399,74 +601,137 @@ function stageView(st) {
   return "";
 }
 function fld(key, label, v, ro) { const id = key.replace(".", "_"); return `<div class="f"><label for="${id}">${esc(label)}</label><input id="${id}" data-f="${key}" value="${esc(v)}"${ro ? " readonly" : ""}></div>`; }
-function area(key, label, v, ro, rows) { const id = key.replace(".", "_"); return `<div class="f"><label for="${id}">${esc(label)}</label><textarea id="${id}" data-f="${key}" rows="${rows || 3}"${ro ? " readonly" : ""}>${esc(v)}</textarea></div>`; }
-function roBrief() { const b = S.brief; return [["Campaign", b.campaign], ["Product", b.product], ["Objective", b.objective], ["Key message", b.message], ["Audience", b.audience], ["Mandatories", b.mandatories]].map(([k, v]) => `<div><b>${k}</b>${esc(v)}</div>`).join(""); }
-function sel(id, label, v, options) { return `<div class="f"><label for="${id}">${label}</label><select id="${id}" data-f="form.${id.split("_")[1]}">${options.map((o) => `<option${o == v ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`; }
-
+function area(key, label, v, ro, rows, ph) { const id = key.replace(".", "_"); return `<div class="f"><label for="${id}">${esc(label)}</label><textarea id="${id}" data-f="${key}" rows="${rows || 3}"${ro ? " readonly" : ""}${ph ? ` placeholder="${esc(ph)}"` : ""}>${esc(v)}</textarea></div>`; }
+function roBrief() { const b = S.brief; return [["Campaign", b.campaign], ["Product", b.product], ["Objective", b.objective], ["Key message", b.message], ["Audience", b.audience], ["Channels", b.channels], ["Ready to post", b.ready], ["Mandatories", b.mandatories]].map(([k, v]) => `<div><b>${k}</b>${esc(v)}</div>`).join(""); }
+function sel(id, label, v, options, ro) { return `<div class="f"><label for="${id}">${label}</label><select id="${id}" data-f="form.${id.split("_")[1]}"${ro ? " disabled" : ""}>${options.map((o) => `<option${o == v ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`; }
+function trendCard(t, mine) {
+  const on = S.trend && S.trend.id === t.id;
+  return `<div class="trend${on ? " sel" : ""}"><div class="t"><span>${esc(t.name)}</span></div><span class="pill bau" style="align-self:flex-start">${esc(t.type)}</span>
+    <p style="margin:0;font-size:13px">${esc(t.what)}</p>
+    <p class="muted"><b>Sample content:</b> ${esc(t.linkNote)}${t.links.length ? " " + t.links.map(([l, u], k) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(l)}${t.links.length > 1 ? " " + (k + 1) : ""} ↗</a>`).join(" · ") : ""}</p>
+    ${mine ? `<button class="btn ${on ? "" : "sec"} small" data-act="pickTrend" data-v="${t.id}">${on ? "Selected" : "Use this trend"}</button>` : ""}</div>`;
+}
+function plannerView(mine, wait, bp) {
+  const d = S.direction, ro = !mine;
+  return `<section class="card"><h2>Complete the brief <span class="pill ok">Step: 2 h</span></h2>${bp("Strategic Planner · Complete brief with trend direction (reads the Trend Library)")}${wait}
+    <div class="ro">${roBrief()}</div></section>
+    <section class="card"><h2>Trend Library <span class="note">Social listening · sample data until the SONAR API is connected</span></h2>
+    <div class="g2">${TRENDS.map((t) => trendCard(t, mine)).join("")}</div></section>
+    <section class="card"><h2>Trend direction ${d && d._fb ? '<span class="tag-fb">sample</span>' : d ? `<span class="pill ok">AI draft · version ${S.dirVersions} · edit freely</span>` : ""}</h2>
+    ${S.trend ? `<p class="muted"><b>Trend:</b> ${esc(S.trend.name)} · ${esc(S.trend.type)}</p>` : ""}
+    ${mine ? `<div class="actions"><button class="btn ${d ? "sec" : "ai"}" data-act="draftDirection"${busy.dir ? " disabled" : ""}>${spin(busy.dir, "Drafting…", d ? "Draft again from scratch" : "Draft direction with AI")}</button><span class="note">Uses the brief + the selected trend</span></div>` : ""}
+    ${d ? `${DIR_FIELDS.map(([k, l, r]) => area("dir." + k, l, d[k], ro, r)).join("")}
+      ${mine ? `<div class="inline"><div class="f"><label for="dirrev">Revise the direction by prompt</label><input id="dirrev" placeholder="e.g. make the Now What about everyday durability, and the direction more playful"></div><button class="btn ai" data-act="reviseDirection"${busy.dirrev ? " disabled" : ""}>${spin(busy.dirrev, "Revising…", "Revise with AI")}</button></div>` : ""}
+      ${area("dir.notes", "Notes (Strategic Planner)", d.notes || "", ro, 5, "Anything the Copywriter and Art Director should know: references, watch-outs, ideas to explore…")}
+      <p class="note">The AI never writes in Notes; revising by prompt changes the four fields above.</p>` : '<p class="muted">Pick a trend, then let the AI draft the direction.</p>'}
+    ${mine && d ? `<div class="actions"><button class="btn" data-act="handToCW">Hand off to Copywriter</button></div>` : ""}</section>`;
+}
+function briefPanel(open) {
+  const d = S.direction;
+  return `<section class="card"><details class="bp"${open ? " open" : ""}><summary><h2>Complete brief + trend direction <span class="note">From Account and the Strategic Planner</span></h2></summary>
+    <div class="ro" style="margin-top:12px">${roBrief()}</div>
+    ${d ? `<h3 style="margin-top:16px">Trend: ${esc(S.trend ? S.trend.name : "-")} <span class="pill bau">${esc(S.trend ? S.trend.type : "")}</span></h3>
+      <div class="dirgrid">${DIR_FIELDS.map(([k, l]) => `<div><b>${esc(l)}</b>${esc(d[k])}</div>`).join("")}${d.notes ? `<div class="wide"><b>Notes from the Strategic Planner</b>${esc(d.notes).replace(/\n/g, "<br>")}</div>` : ""}</div>` : ""}
+  </details></section>`;
+}
 function scriptView(mine, wait, bp) {
-  const f = S.form;
-  return `<section class="card"><h2>Brief form for the AI <span class="pill ok">Step: 1 h</span></h2>${bp("Copywriter · Prompt AI for script options → pick, edit by hand or by prompt → Script final?")}${wait}
-    <p class="muted"><b>Trend direction:</b> ${esc(S.direction ? S.direction.angle : "-")}</p>
-    <div class="g2">${sel("form_hook", "Hook style", f.hook, ["Countdown reveal", "Question", "Problem → solution", "Trend sound", "POV"])}${fld("form.focus", "Product focus", f.focus, !mine)}</div>
-    <div class="g2">${fld("form.must", "Must say", f.must, !mine)}${sel("form_lang", "Language", f.lang, ["Bahasa Indonesia, casual", "English", "Bahasa Indonesia + English mix"])}</div>
-    <div class="g2">${sel("form_n", "Options", f.n, [2, 3, 4])}${fld("form.notes", "Anything else (optional)", f.notes, !mine)}</div>
-    ${mine ? `<div class="actions"><button class="btn ai" data-act="genScripts"${busy.scripts ? " disabled" : ""}>${busy.scripts ? '<span class="spinner"></span> Writing options…' : "Generate script options"}</button></div>` : ""}</section>
-    ${S.options.length ? `<section class="card"><h2>Script options ${S.options[0]._fb ? '<span class="tag-fb">sample</span>' : '<span class="pill ok">AI drafts</span>'}</h2><div class="g3">${S.options.map((o, i) => `<div class="opt${S.pick === i ? " sel" : ""}"><b style="color:#1C1D4F">${i + 1}. ${esc(o.title)}</b><p class="muted">${esc(o.hook || "")}</p><table class="beats"><tbody>${(o.beats || []).map((b) => `<tr><td style="white-space:nowrap;color:#55577A">${esc(b.time)}</td><td>${esc(b.visual)}<br><i style="color:#55577A">“${esc(b.voiceover)}”</i></td></tr>`).join("")}</tbody></table>${mine ? `<button class="btn ${S.pick === i ? "" : "sec"} small" data-act="usePick" data-v="${i}">${S.pick === i ? "Selected" : "Use this option"}</button>` : ""}</div>`).join("")}</div></section>` : ""}
-    ${S.script ? `<section class="card"><h2>Selected script · version ${S.scriptVersions} <span class="note">Edit by hand, or tell the AI what to change</span></h2>
-      <table class="beats"><thead><tr><th>Time</th><th>Visual</th><th>Voice-over</th><th>On screen</th></tr></thead><tbody>${S.script.beats.map((b, i) => `<tr><td style="white-space:nowrap">${esc(b.time)}</td>${["visual", "voiceover", "onscreen"].map((k) => `<td><textarea rows="3" data-beat="${i}:${k}" aria-label="${k} ${i + 1}"${mine ? "" : " readonly"}>${esc(b[k])}</textarea></td>`).join("")}</tr>`).join("")}</tbody></table>
-      ${mine ? `<div class="inline"><div class="f"><label for="revise">Revise by prompt</label><input id="revise" placeholder="e.g. make the hook faster and mention the bundle gift in the first 3 seconds"></div><button class="btn ai" data-act="reviseScript"${busy.revise ? " disabled" : ""}>${busy.revise ? '<span class="spinner"></span> Revising…' : "Revise with AI"}</button></div>
-      <div class="actions"><button class="btn" data-act="scriptFinal">Mark script final · generate still images</button></div>` : ""}</section>` : ""}`;
+  const f = S.form, ro = !mine, n = S.scripts.length;
+  return `${briefPanel(true)}<section class="card"><h2>Brief form for the AI <span class="pill ok">Step: 1 h</span></h2>${bp("Copywriter · Prompt AI for scripts → edit by hand or by prompt → Scripts final?")}${wait}
+    <p class="muted">One script makes one video. Write up to ${MAX_SCRIPTS}.</p>
+    <div class="g2">${sel("form_hook", "Hook style", f.hook, ["Trend format", "Meme / reaction", "Problem → solution", "Reveal", "POV", "Question"], ro)}${fld("form.focus", "Product focus", f.focus, ro)}</div>
+    <div class="g2">${fld("form.must", "Must say", f.must, ro)}${sel("form_lang", "Language", f.lang, ["Bahasa Indonesia, casual", "English", "Bahasa Indonesia + English mix"], ro)}</div>
+    <div class="g2">${sel("form_n", "Number of scripts (videos)", f.n, [1, 2, 3, 4, 5], ro)}${fld("form.notes", "Anything else (optional)", f.notes, ro)}</div>
+    ${mine ? `<div class="actions"><button class="btn ai" data-act="genScripts"${busy.scripts ? " disabled" : ""}>${spin(busy.scripts, "Writing scripts…", n ? "Write all scripts again" : "Generate scripts")}</button></div>` : ""}</section>
+    ${S.scripts.map((s, i) => `<section class="card"><h2><span>Script ${i + 1} · ${esc(s.title)} <span class="note">→ Video ${i + 1} · version ${s.ver || 1}</span></span>${s._fb ? '<span class="tag-fb">sample</span>' : '<span class="pill ok">AI draft</span>'}</h2>
+      <p class="muted"><b>Hook:</b> ${esc(s.hook)}</p>
+      <table class="beats"><thead><tr><th>Time</th><th>Visual</th><th>Voice-over</th><th>On screen</th></tr></thead><tbody>${s.beats.map((b, k) => `<tr><td style="white-space:nowrap">${esc(b.time)}</td>${["visual", "voiceover", "onscreen"].map((x) => `<td><textarea id="bt_${i}_${k}_${x}" rows="3" data-beat="${i}:${k}:${x}" aria-label="Script ${i + 1} ${x} ${k + 1}"${mine ? "" : " readonly"}>${esc(b[x])}</textarea></td>`).join("")}</tr>`).join("")}</tbody></table>
+      ${mine ? `<div class="inline"><div class="f"><label for="rv_${i}">Revise script ${i + 1} by prompt</label><input id="rv_${i}" placeholder="e.g. make the hook faster and land the key message in the last beat"></div><button class="btn ai" data-act="reviseScript" data-v="${i}"${busy["s" + i] ? " disabled" : ""}>${spin(busy["s" + i], "Working…", "Revise with AI")}</button><button class="btn sec" data-act="newScript" data-v="${i}"${busy["s" + i] ? " disabled" : ""}>New take</button><button class="btn danger" data-act="delScript" data-v="${i}">Delete</button></div>` : ""}</section>`).join("")}
+    ${mine && n ? `<section class="card"><div class="actions">${n < MAX_SCRIPTS ? `<button class="btn sec" data-act="addScript"${busy.add ? " disabled" : ""}>${spin(busy.add, "Writing…", "+ Add a script")}</button>` : ""}<button class="btn" data-act="scriptsFinal">Mark ${n} script${n > 1 ? "s" : ""} final · one board each</button><span class="note">${n} of ${MAX_SCRIPTS} scripts = ${n} video${n > 1 ? "s" : ""}</span></div></section>` : ""}`;
 }
+const STATUS = { draft: ["In progress", "bau"], internal: ["With Creative Lead", "bau"], int_ok: ["Approved internally", "ok"], int_rev: ["Revise", "warn"],
+  client: ["With Samsung", "bau"], client_ok: ["Approved by Samsung", "ok"], client_rev: ["Samsung: revise", "warn"], joint: ["Joint re-review", "bau"], done: ["Approved", "ok"] };
+const statusPill = (b) => { const [t, c] = STATUS[b.status] || ["", "bau"]; return `<span class="pill ${c}">${t}</span>`; };
 function imagesView(st, mine, wait, bp) {
-  const fb = S.comments.find((c) => c.stage === "client_board");
-  const fr = S.frames[S.selFrame];
-  const anyImg = S.frames.some((f) => f.cur >= 0);
-  return `<section class="card"><h2>${st.id === "board_revision" ? "Revise the board" : "AI still images"} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "board_revision" ? "Copywriter + Art Director · Revise board by prompt → joint re-review (BAU)" : "Creative AI · Generate still images → Art Director · Review, refine by prompt → Satisfied?")}${wait}
-    ${st.id === "board_revision" && fb ? `<div class="alert"><b>Samsung's feedback:</b> ${esc(fb.text)}</div>` : ""}
-    ${S.rounds.board > 1 && st.id === "images" ? `<div class="alert"><b>Creative Lead's feedback:</b> ${esc((S.comments.find((c) => c.stage === "internal_board") || {}).text || "Revise and resubmit.")}</div>` : ""}
-    <div class="g2"><div class="f"><label for="look">Look and mood</label><input id="look" value="${esc(S.look)}"${mine ? "" : " readonly"} placeholder="e.g. warm evening light, playful, Jakarta café"></div>
-    <div class="f"><label>Product reference (optional)</label>${S.productRef ? `<div class="actions"><img src="${S.productRef}" alt="Product reference" style="height:64px;border-radius:8px">${mine ? '<button class="btn sec small" data-act="clearRef">Remove</button>' : ""}</div>` : mine ? `<input type="file" accept="image/*" data-change="uploadRef" aria-label="Upload a product reference photo">` : '<p class="muted">None</p>'}<span class="note">An official product shot keeps the phone accurate.</span></div></div>
-    ${mine ? `<div class="actions"><button class="btn ai" data-act="genFrames"${busy.frames ? " disabled" : ""}>${busy.frames ? '<span class="spinner"></span> Generating…' : anyImg ? "Generate all frames again" : "Generate still images"}</button><span class="note">One image per script beat · ${S.frames.length} frames</span></div>` : ""}
-    <div class="frames">${S.frames.map((f, i) => { const v = f.versions[f.cur]; return `<div class="frame"><button class="img${S.selFrame === i ? " sel" : ""}" data-act="selFrame" data-v="${i}" aria-label="Frame ${i + 1}">${v ? `<img src="${v.img}" alt="Frame ${i + 1}">` : ""}<span class="lab">${i + 1} · ${esc(S.script.beats[i].time)}</span>${f.busy ? '<span class="spin"><span class="spinner"></span>&nbsp;AI…</span>' : ""}</button>${v && v.fb ? '<span class="tag-fb">sample</span>' : v ? `<span class="note">v${f.cur + 1}${f.versions.length > 1 ? " of " + f.versions.length : ""}</span>` : ""}</div>`; }).join("")}</div>
+  const rev = st.id === "board_revision";
+  const i = Math.min(S.selBoard, S.boards.length - 1), b = S.boards[i], s = S.scripts[i];
+  const can = mine && editable(b);
+  const nEdit = S.boards.filter(editable).length;
+  const fr = b.frames[b.selFrame];
+  const lastFb = b.fb[0];
+  return `${briefPanel(true)}<section class="card"><h2>${rev ? "Revise the boards" : "AI boards · one per script"} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(rev ? "Copywriter + Art Director · Revise board by prompt → joint re-review (BAU)" : "Creative AI · Generate still images → Art Director · Review, refine by prompt → Satisfied?")}${wait}
+    <div class="g2"><div class="f"><label>Actual product image</label>${S.productRef ? `<div class="actions"><img src="${S.productRef}" alt="Product reference" style="height:64px;border-radius:8px">${mine ? '<button class="btn sec small" data-act="clearRef">Remove</button>' : ""}</div>` : mine ? `<input type="file" accept="image/*" data-change="uploadRef" aria-label="Upload the actual product photo">` : '<p class="muted">None</p>'}<span class="note">${S.productRef ? "Sent with every image prompt so the phone keeps its real shape." : "<b>Add an official Galaxy Z Fold8 photo:</b> every prompt uses it as the reference."}</span></div>
+    ${mine ? `<div class="f"><label>All boards</label><div class="actions"><button class="btn sec" data-act="draftAll"${busy.all || !nEdit ? " disabled" : ""}>${spin(busy.all, "Working…", "Draft all prompts with AI")}</button><button class="btn ai" data-act="genAll"${busy.all || !nEdit ? " disabled" : ""}>Generate all boards</button></div><span class="note">${nEdit} board(s) to work on</span></div>` : ""}</div>
+    <div class="tabs" role="tablist">${S.boards.map((x, k) => `<button role="tab" class="tab${k === i ? " sel" : ""}" aria-selected="${k === i}" data-act="selBoard" data-v="${k}">Board ${k + 1} · ${esc(S.scripts[k].title)} ${statusPill(x)}</button>`).join("")}</div></section>
+    <section class="card"><h2><span>Board ${i + 1} · ${esc(s.title)}</span>${statusPill(b)}</h2>
+    ${lastFb && editable(b) ? `<div class="alert"><b>${esc(ROLES[lastFb.by])}'s feedback:</b> ${esc(lastFb.text)}</div>` : ""}
+    ${!editable(b) ? `<p class="muted">This board is ${esc((STATUS[b.status] || [""])[0].toLowerCase())} and locked this round.</p>` : ""}
+    <details><summary class="note">Script ${i + 1}: ${esc(s.hook)}</summary>${scriptTable(s)}</details>
+    <h3>Key visual prompt</h3>
+    <div class="g2"><div class="f"><label for="n_${i}">Images on this board</label><select id="n_${i}" data-change="setN" data-i="${i}"${can ? "" : " disabled"}>${[1, 2, 3].map((n) => `<option value="${n}"${b.n === n ? " selected" : ""}>${n === 1 ? "1 · one key visual" : n === 2 ? "2 · start and end frame" : "3 · sequence"}</option>`).join("")}</select></div>
+      ${can ? `<div class="f"><label>&nbsp;</label><div class="actions"><button class="btn sec" data-act="draftBoard" data-v="${i}"${b.busy ? " disabled" : ""}>${spin(b.busy, "Drafting…", b.drafted ? "Redraft prompt with AI" : "Draft prompt with AI")}</button>${b._fb ? '<span class="tag-fb">sample</span>' : ""}</div></div>` : ""}</div>
+    <div class="g3">${b.frames.map((f, k) => `<div class="f"><label for="pose_${i}_${k}">POSE · image ${k + 1}</label><textarea id="pose_${i}_${k}" rows="3" data-pose="${i}:${k}"${can ? "" : " readonly"} placeholder="What is in image ${k + 1}">${esc(f.pose)}</textarea></div>`).join("")}</div>
+    <div class="g2">${PROMPT_FIELDS.map(([k, l]) => `<div class="f"><label for="bp_${i}_${k}">${l}</label><textarea id="bp_${i}_${k}" rows="3" data-bp="${i}:${k}"${can ? "" : " readonly"}>${esc(b.p[k])}</textarea></div>`).join("")}</div>
+    ${can ? `<div class="actions"><button class="btn ai" data-act="genBoard" data-v="${i}"${busy["b" + i] || busy.all ? " disabled" : ""}>${spin(busy["b" + i], "Generating…", b.frames.some((f) => f.cur >= 0) ? "Generate this board again" : `Generate ${b.n} image${b.n > 1 ? "s" : ""}`)}</button><span class="note">Image 1 first; the others follow it for continuity</span></div>` : ""}
+    <div class="frames">${b.frames.map((f, k) => { const v = f.versions[f.cur]; return `<div class="frame"><button class="img${b.selFrame === k ? " sel" : ""}" data-act="selFrame" data-v="${i}:${k}" aria-label="Image ${k + 1}">${v ? `<img src="${v.img}" alt="Board ${i + 1} image ${k + 1}">` : ""}<span class="lab">Image ${k + 1}</span>${f.busy ? '<span class="spin"><span class="spinner"></span>&nbsp;AI…</span>' : ""}</button>${v && v.fb ? '<span class="tag-fb">sample</span>' : v ? `<span class="note">v${f.cur + 1}${f.versions.length > 1 ? " of " + f.versions.length : ""}</span>` : ""}</div>`; }).join("")}</div>
+    ${fr && fr.cur >= 0 ? `<div class="sub"><h3>Image ${b.selFrame + 1} · versions</h3>
+      <div class="vers" aria-label="Versions">${fr.versions.map((v, n) => `<button class="${fr.cur === n ? "sel" : ""}" data-act="selVer" data-v="${i}:${b.selFrame}:${n}" title="${esc(v.label)}"><img src="${v.img}" alt="Version ${n + 1}"></button>`).join("")}</div>
+      <details><summary class="note">Prompt sent for v${fr.cur + 1}</summary><pre class="prompt">${esc(fr.versions[fr.cur].prompt)}</pre></details>
+      ${can ? `<div class="inline"><div class="f"><label for="refine_${i}">Revision prompt for image ${b.selFrame + 1}</label><textarea id="refine_${i}" rows="3" placeholder="- make the Fold8 in the front more visible&#10;- don't change the orientation of the phones"></textarea></div><button class="btn ai" data-act="refine" data-v="${i}"${busy["r" + i] ? " disabled" : ""}>${spin(busy["r" + i], "Editing…", "Revise with AI")}</button><button class="btn sec" data-act="regenFrame" data-v="${i}"${busy["r" + i] ? " disabled" : ""}>New take</button></div><p class="note">Manual edit may still be needed after AI revisions.</p>` : ""}</div>` : ""}
+    <h3>Prompt to video <span class="note">Handed to production for Flow</span></h3>
+    <div class="g2">${VIDEO_FIELDS.map(([k, l, r]) => `<div class="f"><label for="vp_${i}_${k}">${l}</label><textarea id="vp_${i}_${k}" rows="${r}" data-vp="${i}:${k}"${can ? "" : " readonly"}>${esc(b.video[k])}</textarea></div>`).join("")}</div>
     </section>
-    ${fr && fr.cur >= 0 ? `<section class="card"><h2>Frame ${S.selFrame + 1} · ${esc(S.script.beats[S.selFrame].time)}</h2><p class="muted">${esc(S.script.beats[S.selFrame].visual)}</p>
-      <div class="vers" aria-label="Versions">${fr.versions.map((v, k) => `<button class="${fr.cur === k ? "sel" : ""}" data-act="selVer" data-v="${S.selFrame}:${k}" title="${esc(v.prompt)}"><img src="${v.img}" alt="Version ${k + 1}"></button>`).join("")}</div>
-      <div class="log" style="max-height:120px">${fr.versions.map((v, k) => `<div class="e"><b>v${k + 1}</b> ${esc(v.prompt)}</div>`).reverse().join("")}</div>
-      ${mine ? `<div class="inline"><div class="f"><label for="refine">Refine this frame by prompt</label><input id="refine" placeholder="e.g. warmer evening light, add the Jakarta skyline behind her"></div><button class="btn ai" data-act="refine"${busy.refine ? " disabled" : ""}>${busy.refine ? '<span class="spinner"></span> Editing…' : "Refine with AI"}</button><button class="btn sec" data-act="regenFrame"${busy.refine ? " disabled" : ""}>New take</button></div>` : ""}</section>` : ""}
-    ${mine && anyImg ? `<section class="card"><h2>Satisfied with the board?</h2><div class="actions"><button class="btn" data-act="submitBoard">${st.id === "board_revision" ? "Send to joint re-review" : "Submit board for internal review"}</button></div></section>` : ""}`;
+    ${mine && nEdit ? `<section class="card"><h2>Satisfied with the boards?</h2><div class="actions"><button class="btn" data-act="submitBoard">${rev ? `Send ${nEdit} revised board(s) to joint re-review` : `Submit ${nEdit} board(s) for internal review`}</button>${S.boards.length > 1 ? `<span class="note">Every open board needs its images first</span>` : ""}</div></section>` : ""}`;
 }
-function boardHTML() {
-  return `<table class="beats"><tbody>${S.script.beats.map((b) => `<tr><td style="white-space:nowrap;color:#55577A">${esc(b.time)}</td><td>${esc(b.visual)}<br><i style="color:#55577A">“${esc(b.voiceover)}”</i>${b.onscreen ? `<br><b>On screen:</b> ${esc(b.onscreen)}` : ""}</td></tr>`).join("")}</tbody></table>
-  <div class="frames">${S.frames.map((f, i) => { const v = f.versions[f.cur]; return `<div class="frame"><div class="img" style="cursor:default">${v ? `<img src="${v.img}" alt="Frame ${i + 1}">` : ""}<span class="lab">${i + 1} · ${esc(S.script.beats[i].time)}</span></div></div>`; }).join("")}</div>`;
+function scriptTable(s) {
+  return `<table class="beats"><tbody>${s.beats.map((b) => `<tr><td style="white-space:nowrap;color:#55577A">${esc(b.time)}</td><td>${esc(b.visual)}<br><i style="color:#55577A">“${esc(b.voiceover)}”</i>${b.onscreen ? `<br><b>On screen:</b> ${esc(b.onscreen)}` : ""}</td></tr>`).join("")}</tbody></table>`;
+}
+function boardHTML(i) {
+  const b = S.boards[i];
+  return `${scriptTable(S.scripts[i])}
+  <div class="frames">${b.frames.map((f, k) => { const v = f.versions[f.cur]; return `<div class="frame"><div class="img" style="cursor:default">${v ? `<img src="${v.img}" alt="Board ${i + 1} image ${k + 1}">` : ""}<span class="lab">Image ${k + 1}</span></div></div>`; }).join("")}</div>
+  <details><summary class="note">Prompt to video</summary><pre class="prompt">${esc(VIDEO_FIELDS.map(([k, l]) => `${l}:\n${b.video[k]}`).join("\n\n"))}</pre></details>`;
+}
+function boardDecision(i, opts, mine) {
+  const d = (typeof S.decision[S.stage] === "object" ? S.decision[S.stage] : {})[i];
+  return `<div class="decision"><div class="g2">${opts.map(([v, t, sub]) => `<label class="radio${d === v ? " sel" : ""}"><input type="radio" name="dec_${i}" data-change="pickDecision" value="${i}:${v}"${d === v ? " checked" : ""}${mine ? "" : " disabled"}><span><b style="font-size:14px">${t}</b><br><span class="note">${sub}</span></span></label>`).join("")}</div>
+  ${mine ? `<div class="f"><label for="cm_${i}">Comment on board ${i + 1}${d === "revise" ? " (what should change?)" : " (optional)"}</label><textarea id="cm_${i}" rows="2" placeholder="${S.stage === "client_board" ? "e.g. Make the Fold8 bigger in image 2" : "Feedback for the team"}"></textarea></div>` : ""}</div>`;
 }
 function decisionHTML(opts, mine) {
   const d = S.decision[S.stage];
   return `<div class="decision">${opts.map(([v, t, sub]) => `<label class="radio${d === v ? " sel" : ""}"><input type="radio" name="dec" data-change="pickDecision" value="${v}"${d === v ? " checked" : ""}${mine ? "" : " disabled"}><span><b style="font-size:14px">${t}</b><br><span class="note">${sub}</span></span></label>`).join("")}
-  ${mine ? `<div class="f"><label for="comment">Comment ${S.stage.startsWith("client") ? "(one combined set of feedback)" : "(optional)"}</label><textarea id="comment" rows="2" placeholder="${S.stage === "client_board" ? "e.g. Use the red Flip colour in frames 2 and 4" : "Feedback for the team"}"></textarea></div><div class="actions"><button class="btn" data-act="decide">Send decision</button></div>` : ""}</div>`;
+  ${mine ? `<div class="f"><label for="comment">Comment ${S.stage.startsWith("client") ? "(one combined set of feedback)" : "(optional)"}</label><textarea id="comment" rows="2" placeholder="Feedback for the team"></textarea></div><div class="actions"><button class="btn" data-act="decide">Send decision</button></div>` : ""}</div>`;
 }
 function boardReview(st, mine, wait, bp) {
-  const client = st.id !== "internal_board";
+  const client = st.id !== "internal_board", joint = st.id === "joint_rereview";
+  const idx = pendingBoards(), others = S.boards.map((b, i) => i).filter((i) => !idx.includes(i));
   const title = st.id === "internal_board" ? "Internal board review" : st.id === "client_board" ? "Board review" : "Joint re-review (Cheil + Samsung)";
-  const opts = st.id === "internal_board" ? [["approve", "Approve and send to Samsung", "Account sends the board to Samsung."], ["revise", "Request revision", "Copywriter and Art Director revise by prompt."]]
-    : st.id === "client_board" ? [["approve", "Approve the board", "Cheil starts video production."], ["revise", "Request changes", "One round: Cheil revises, then we re-review together."]]
-    : [["approve", "Approved together", "Video production starts."]];
-  return `<section class="card${client ? " portal" : ""}">${client ? '<span class="portal-tag">Samsung review portal</span>' : ""}<h2>${title} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "internal_board" ? "Creative Leads · Internal review → Approved?" : st.id === "client_board" ? "Samsung · Review board → Approved? (BAU: one revision, then joint re-review)" : "Cheil + Samsung · Re-review board together")}${wait}
-    ${boardHTML()}</section>
-    ${st.id === "internal_board" ? `<section class="card"><h2>AI pre-check</h2>${mine ? `<div class="actions"><button class="btn ai" data-act="aiCheck"${busy.check ? " disabled" : ""}>${busy.check ? '<span class="spinner"></span> Checking…' : "Check the board against the brief"}</button></div>` : ""}
-      ${S.aiCheck ? `<div class="checks">${S.aiCheck.map((c) => `<div class="check"><span class="pill ${c.status === "pass" ? "ok" : "warn"}">${c.status === "pass" ? "Pass" : "Check"}</span><span><b>${esc(c.item)}</b> · ${esc(c.note)}</span></div>`).join("")}</div>${S.aiCheck[0]._fb ? '<span class="tag-fb">sample</span>' : ""}` : '<p class="muted">The AI reads the brief and the script and flags anything off-brief before the client sees it.</p>'}</section>` : ""}
-    <section class="card"><h2>Your decision</h2>${decisionHTML(opts, mine)}</section>`;
+  const opts = st.id === "internal_board" ? [["approve", "Approve", "Goes to Samsung once every board is approved."], ["revise", "Request revision", "Copywriter and Art Director revise this board by prompt."]]
+    : [["approve", "Approve this board", "Ready for production."], ["revise", "Request changes", "One round: Cheil revises, then we re-review together."]];
+  const dec = typeof S.decision[st.id] === "object" ? S.decision[st.id] : {};
+  const nDone = idx.filter((i) => dec[i]).length;
+  return `<section class="card${client ? " portal" : ""}">${client ? '<span class="portal-tag">Samsung review portal</span>' : ""}<h2>${title} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "internal_board" ? "Creative Leads · Internal review → Approved? (per board)" : st.id === "client_board" ? "Samsung · Review board → Approved? (per board; BAU: one revision, then joint re-review)" : "Cheil + Samsung · Re-review revised boards together")}${wait}
+    <p class="muted">${idx.length} board${idx.length > 1 ? "s" : ""} to review${joint ? "" : ", each approved or sent back on its own"}.${others.length ? ` Already settled: ${others.map((i) => `board ${i + 1} (${(STATUS[S.boards[i].status] || [""])[0].toLowerCase()})`).join(", ")}.` : ""}</p>
+    ${st.id === "internal_board" ? `<div class="actions">${mine ? `<button class="btn ai" data-act="aiCheckAll"${busy.check ? " disabled" : ""}>${spin(busy.check, "Checking…", "AI pre-check: all boards against the brief")}</button>` : ""}<span class="note">The AI flags anything off-brief before Samsung sees it.</span></div>` : ""}</section>
+    ${idx.map((i) => { const b = S.boards[i]; return `<section class="card${client ? " portal" : ""}"><h2><span>Board ${i + 1} · ${esc(S.scripts[i].title)} <span class="note">→ Video ${i + 1}</span></span>${statusPill(b)}</h2>
+      ${joint && b.fb[0] ? `<div class="alert"><b>Samsung's feedback:</b> ${esc(b.fb[0].text)}</div>` : ""}
+      ${boardHTML(i)}
+      ${b.check ? `<div class="checks">${b.check.map((c) => `<div class="check"><span class="pill ${c.status === "pass" ? "ok" : "warn"}">${c.status === "pass" ? "Pass" : "Check"}</span><span><b>${esc(c.item)}</b> · ${esc(c.note)}</span></div>`).join("")}${b.check[0]._fb ? '<span class="tag-fb">sample</span>' : ""}</div>` : ""}
+      ${joint ? "" : boardDecision(i, opts, mine)}</section>`; }).join("")}
+    ${mine ? `<section class="card"><div class="actions"><button class="btn" data-act="decide">${joint ? "Approved together · start production" : `Send decisions (${nDone} of ${idx.length} chosen)`}</button></div></section>` : ""}`;
 }
 function playerHTML(v, i) {
-  return `<div class="vid"><div class="player" data-player="${i}"><div class="prog"><i></i></div>${S.frames.map((f, k) => `<img src="${(f.versions[f.cur] || {}).img || ""}" alt="" class="${k === 0 ? "on" : ""}">`).join("")}<div class="cap">${esc(v.caps[0] || "")}</div><div class="end"><span style="font-size:18px">SAMSUNG</span><span style="font-size:13px;font-weight:500">${esc(S.brief.product)}</span><span style="font-size:12px;font-weight:500">${esc(S.brief.mandatories.split(".")[0])}</span></div><div class="ctrl"><button data-act="play" data-v="${i}">▶ Play 0:15</button></div></div><b style="font-size:13px">${esc(v.name)}</b></div>`;
+  const b = S.boards[v.board] || { frames: [] };
+  return `<div class="vid"><div class="player" data-player="${i}"><div class="prog"><i></i></div>${b.frames.map((f, k) => `<img src="${(f.versions[f.cur] || {}).img || ""}" alt="" class="${k === 0 ? "on" : ""}">`).join("")}<div class="cap">${esc(v.caps[0] || "")}</div><div class="end"><span style="font-size:18px">SAMSUNG</span><span style="font-size:13px;font-weight:500">${esc(S.brief.product)}</span><span style="font-size:12px;font-weight:500">${esc(S.form.must)}</span></div><div class="ctrl"><button data-act="play" data-v="${i}">▶ Play 0:15</button></div></div><b style="font-size:13px">${esc(v.name)}</b></div>`;
 }
 function productionView(st, mine, wait, bp) {
   const fb = S.comments.find((c) => c.stage === "client_content");
   return `<section class="card"><h2>${st.id === "content_revision" ? "Content revision" : "Video production"} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "content_revision" ? "Creative · Revise content (Samsung feedback) → internal re-review" : "Creative · Produce videos in Flow, After Effects and Suno → upload")}${wait}
     ${st.id === "content_revision" && fb ? `<div class="alert"><b>Samsung's feedback:</b> ${esc(fb.text)}</div>` : ""}
-    <p class="muted">Production happens in Flow, After Effects and Suno; finished files are uploaded here. In this demo the approved frames become animated previews.</p>
-    ${mine && st.id === "production" ? `<div class="actions"><button class="btn ai" data-act="render"${busy.render ? " disabled" : ""}>${busy.render ? '<span class="spinner"></span> Rendering…' : S.videos.length ? "Render again" : "Render and upload " + (S.brief.videos || 5) + " variants"}</button></div>` : ""}
+    <p class="muted">One video per approved board. Production animates each board's images in Flow with its prompt to video, then finishes in After Effects and Suno. In this demo the boards become animated previews.</p>
+    <details><summary class="note">Prompts to video for Flow (${S.boards.length})</summary>${S.boards.map((b, i) => `<p style="margin:10px 0 4px"><b>Video ${i + 1} · ${esc(S.scripts[i].title)}</b></p><pre class="prompt">${esc(VIDEO_FIELDS.map(([k, l]) => `${l}:\n${b.video[k]}`).join("\n\n"))}\n\n—\nManual edit is required.</pre>`).join("")}</details>
+    ${mine && st.id === "production" ? `<div class="actions"><button class="btn ai" data-act="render"${busy.render ? " disabled" : ""}>${spin(busy.render, "Producing…", S.videos.length ? "Produce again" : `Produce and upload ${S.boards.length} video${S.boards.length > 1 ? "s" : ""}`)}</button></div>` : ""}
     ${S.videos.length ? `<div class="vids">${S.videos.map(playerHTML).join("")}</div>` : ""}
-    ${st.id === "content_revision" && S.videos.length ? `<h3>Edit on-screen text</h3>${S.videos.map((v, i) => `<div class="f"><label>${esc(v.name)}</label><div class="g3">${v.caps.map((c, k) => `<input data-cap="${i}:${k}" value="${esc(c)}" aria-label="${esc(v.name)} beat ${k + 1}"${mine ? "" : " readonly"}>`).join("")}</div></div>`).join("")}${mine ? '<div class="actions"><button class="btn" data-act="applyRevision">Re-render and send to internal re-review</button></div>' : ""}` : ""}
+    ${st.id === "content_revision" && S.videos.length ? `<h3>Edit on-screen text</h3>${S.videos.map((v, i) => `<div class="f"><label>${esc(v.name)}</label><div class="g3">${v.caps.map((c, k) => `<input id="cap_${i}_${k}" data-cap="${i}:${k}" value="${esc(c)}" aria-label="${esc(v.name)} beat ${k + 1}"${mine ? "" : " readonly"}>`).join("")}</div></div>`).join("")}${mine ? '<div class="actions"><button class="btn" data-act="applyRevision">Re-render and send to internal re-review</button></div>' : ""}` : ""}
     ${mine && st.id === "production" && S.videos.length ? `<div class="actions"><button class="btn" data-act="sendContent">Send to internal content review</button></div>` : ""}</section>`;
 }
 function contentReview(st, mine, wait, bp) {
@@ -496,12 +761,16 @@ function sideView() {
 // ---------- events ----------
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]"); if (!b) return;
-  const f = A[b.dataset.act]; if (f) { e.preventDefault(); f(b.dataset.v, b); }
+  const f = A[b.dataset.act]; if (f) { e.preventDefault(); syncAll(); f(b.dataset.v, b); }
 });
 document.addEventListener("change", (e) => {
-  const el = e.target.closest("[data-change]"); if (el) { const f = A[el.dataset.change]; if (f) f(el.value, el); return; }
-  const fk = e.target.dataset && e.target.dataset.f;
-  if (fk && fk.startsWith("form.")) { S.form[fk.split(".")[1]] = e.target.value; save(); }
+  const el = e.target.closest("[data-change]"); if (el) { syncAll(); const f = A[el.dataset.change]; if (f) f(el.value, el); return; }
+  if (e.target.matches(BOUND)) { syncAll(); save(); }
+});
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.matches(BOUND)) syncAll();
+  else if (t.id && /^(dirrev|rv_|refine_|cm_|comment)/.test(t.id)) drafts[t.id] = t.value;
 });
 
 // ---------- passcode ----------
