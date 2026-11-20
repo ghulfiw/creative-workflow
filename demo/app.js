@@ -4,17 +4,17 @@
 
 // ---------- constants ----------
 const ROLES = {
-  AM: "Account Manager", SP: "Strategic Planner", CW: "Copywriter", AD: "Art Director",
+  AM: "Account Manager", SP: "Strategic Planner", CR: "Creative",
   CL: "Creative Lead (ECD)", VE: "Video Editor", SS: "Samsung reviewer",
 };
 const STAGES = [
   { id: "brief", label: "Brief", owner: "AM", hours: 1 },
   { id: "planner", label: "Complete brief", owner: "SP", hours: 2 },
-  { id: "script", label: "AI scripts", owner: "CW", hours: 1 },
-  { id: "images", label: "AI boards", owner: "AD", hours: 1 },
+  { id: "script", label: "AI scripts", owner: "CR", hours: 1 },
+  { id: "images", label: "AI boards", owner: "CR", hours: 1 },
   { id: "internal_board", label: "Internal board review", owner: "CL", hours: 1.5 },
   { id: "client_board", label: "Samsung board review", owner: "SS", hours: 2 },
-  { id: "board_revision", label: "Board revision", owner: "AD", hours: 1.5, optional: true },
+  { id: "board_revision", label: "Board revision", owner: "CR", hours: 1.5, optional: true },
   { id: "joint_rereview", label: "Joint re-review", owner: "SS", hours: 2, optional: true },
   { id: "production", label: "Video production", owner: "VE", hours: 4 },
   { id: "internal_content", label: "Internal content review", owner: "CL", hours: 2 },
@@ -36,7 +36,8 @@ const TRENDS = [
     sample: { insight: "The iPhone Duo screen-crack conversation has inspired Indonesian creators to turn product concerns into memes, jokes and humorous content.",
       so_what: "Product issues can quickly become entertainment, attracting attention beyond tech audiences and opening wider conversations about foldable smartphones.",
       now_what: "Samsung can join the conversation through relatable humour while reinforcing confidence in the Galaxy foldable experience, supported by authentic product demonstrations.",
-      scd: "Turn foldable concerns into opportunities to showcase real Galaxy experiences." } },
+      scd: "Turn foldable concerns into opportunities to showcase real Galaxy experiences.",
+      opps: "Crack-proof comebacks: Answer the screen-crack jokes with playful, real Galaxy demos.\nFold test, live: Open and close the Fold8 on camera in everyday moments.\nWallpaper prank: Hook with a cracked-screen wallpaper, then reveal a perfect Galaxy screen." } },
   { id: "stopwedding", name: "Stop The Wedding", type: "Social / Cultural Format Trend",
     what: "Indonesian creators are adapting the “Stop The Wedding” format to humorously interrupt everyday situations and questionable decisions.",
     links: [["TikTok", "https://www.tiktok.com/@adie_space/video/7694144931836841222"]],
@@ -44,7 +45,8 @@ const TRENDS = [
     sample: { insight: "Indonesian creators are adapting the “Stop The Wedding” format to humorously interrupt everyday situations and questionable decisions.",
       so_what: "The format makes warnings and advice entertaining, allowing creators to challenge decisions without sounding overly serious or promotional.",
       now_what: "Samsung can adapt the format to encourage consumers to reconsider how they choose a foldable smartphone, highlighting the practical advantages of Galaxy.",
-      scd: "Use the viral warning format to challenge common foldable purchase decisions." } },
+      scd: "Use the viral warning format to challenge common foldable purchase decisions.",
+      opps: "Stop the checkout: Interrupt a foldable purchase with the viral warning format.\nCheck before you fold: Friends quiz each other on what to test in a foldable.\nHappy ending: Close every interruption with the Fold8 as the better choice." } },
   { id: "padel", name: "Padel Lifestyle", type: "Lifestyle Trend",
     what: "Padel is gaining attention as a social lifestyle activity, with Indonesian consumers sharing first-time experiences, equipment trials and moments with friends.",
     links: [["TikTok", "https://www.tiktok.com/@justpadeluk/video/7659392828841217302"]],
@@ -52,26 +54,37 @@ const TRENDS = [
     sample: { insight: "Padel is gaining attention as a social lifestyle activity, with Indonesian consumers sharing first-time experiences, equipment trials and moments with friends.",
       so_what: "Padel is not just about playing sports. It's also becoming a social experience where consumers connect, capture moments and share their activities.",
       now_what: "Samsung can connect Galaxy devices to consumers' active social lifestyles, demonstrating how Galaxy smartphones and wearables support their everyday experiences.",
-      scd: "Position Galaxy as a companion for active, social lifestyles." } },
-  { id: "aseancup", name: "ASEAN Cup", type: "Occasion Trend",
-    what: "Football fans across Indonesia gather for ASEAN Cup nobar (watch parties) at home, in cafés and in front of big screens, sharing live reactions, predictions and match-day moments.",
-    links: [], linkNote: "No sample posts yet: they arrive with the SONAR feed.",
-    sample: { insight: "Football fans across Indonesia gather for ASEAN Cup nobar (watch parties) at home, in cafés and in front of big screens, sharing live reactions, predictions and match-day moments.",
-      so_what: "Big matches bring people together beyond hardcore fans, and nobar moments are filmed and shared in real time, so attention is high and shared.",
-      now_what: "Samsung can join match-day moments by showing how a big, foldable Galaxy screen keeps fans close to the game and to each other, wherever they watch.",
-      scd: "Make Galaxy the best seat in the house for every nobar moment." } },
+      scd: "Position Galaxy as a companion for active, social lifestyles.",
+      opps: "Hands-free match cam: Flex Mode films the rally from the bench.\nReplay on the big screen: Friends review the winning shot on the unfolded display.\nCourt to cafe: Follow the social side of padel, from the game to the hangout." } },
+  { id: "purplejakarta", name: "Purple Jakarta (BTS Concert)", type: "Event / Fan Culture Trend",
+    what: "Jakarta plans to turn parts of the city purple to welcome BTS's December concerts, creating excitement and conversations among Indonesian ARMY.",
+    links: [], linkNote: "News coverage of Jakarta's icons turning purple and the Ministry of Tourism's preparations (18 Nov 2026); fan preparation videos.",
+    sample: { insight: "Jakarta plans to turn parts of the city purple to welcome BTS's December concerts, creating excitement and conversations among Indonesian ARMY.",
+      so_what: "The initiative creates a locally relevant moment for fans to express their excitement and share their experiences.",
+      now_what: "Samsung can tap into the Purple Jakarta excitement by creating AI-assisted local content that celebrates fan culture and connects it with Galaxy experiences.",
+      scd: "Use familiar Jakarta settings, purple-themed visuals and ARMY excitement to create engaging social content, naturally integrating relevant Galaxy experiences.",
+      opps: "Transform Jakarta in Purple: Reimagine iconic Jakarta landmarks with purple-themed AI visuals, featuring Galaxy products.\nCapture the Fan Experience: Highlight how Galaxy's camera, zoom and large screen enhance memorable concert moments.\nTurn Fan Excitement Into Content: Use relatable concert preparations, fan reactions and anticipation to create entertaining Galaxy-focused content." } },
+  { id: "gta6", name: "GTA VI", type: "Pop Culture / Gaming Trend",
+    what: "GTA VI's release is generating excitement among Indonesian gamers, driving online discussions and reactions.",
+    links: [], linkNote: "A viral post jokingly \u201cadjusting office hours\u201d for the GTA VI release; creators explaining why GTA VI is everywhere.",
+    sample: { insight: "GTA VI's release is generating excitement among Indonesian gamers, driving online discussions and reactions.",
+      so_what: "The hype is influencing everyday plans and priorities, sparking relatable jokes beyond gaming.",
+      now_what: "Samsung can tap into the hype with AI-generated content that brings familiar Indonesian situations into a GTA-inspired world.",
+      scd: "Reimagine everyday Indonesian life through GTA-inspired visuals, local humour and relatable scenarios, naturally integrating Galaxy products.",
+      opps: "GTA-Inspired Humour: Turn GTA VI hype into relatable, humorous everyday scenarios, naturally featuring Galaxy products.\nIndonesian Life in GTA Mode: Turn familiar local situations into humorous GTA-style missions.\nGalaxy in the Game: Integrate Galaxy devices as part of the fictional GTA-inspired experience." } },
 ];
 const DIR_FIELDS = [
   ["insight", "Insight · What's trending?", 3],
   ["so_what", "So What · Why does it matter?", 3],
   ["now_what", "Now What · What's the brand opportunity?", 3],
   ["scd", "Strategic Content Direction", 2],
+  ["opps", "Creative Opportunities", 5],
 ];
 const PROMPT_FIELDS = [["object", "OBJECT"], ["background", "BACKGROUND"], ["layout", "LAYOUT"], ["camera", "CAMERA"], ["lighting", "LIGHTING AND TONE"]];
 const VIDEO_FIELDS = [["sequence", "SEQUENCE", 7], ["camera", "CAMERA", 3], ["audio", "AUDIO", 3]];
 
 const fresh = () => ({
-  v: 4, role: "AM", follow: true, stage: "brief", elapsed: 0, started: false,
+  v: 5, role: "AM", follow: true, stage: "brief", elapsed: 0, started: false,
   brief: {
     workflow: "BAU", campaign: "Snowball · Foldable confidence · Brief 1", product: "Galaxy Z Fold8",
     objective: "Win over foldable shoppers worried about screen durability after the iPhone Duo screen-crack conversation, and grow consideration for Galaxy Z Fold8.",
@@ -185,11 +198,16 @@ const SAMPLE_SCRIPTS = [
     { time: "3–7s", visual: "Fast rally, a winning smash, friends cheer", voiceover: "Smash!", onscreen: "" },
     { time: "7–11s", visual: "The group crowds around the unfolded Fold8 to watch the replay on the big screen", voiceover: "Replay-nya jelas banget.", onscreen: "Replay di layar lebar" },
     { time: "11–15s", visual: "Selfie with the cover screen as the group poses; Samsung end card", voiceover: "Galaxy Z Fold8, teman main kamu.", onscreen: "Galaxy Z Fold8" } ] },
-  { title: "Nobar layar lebar", follows: "Makes the Fold8's big screen the best seat in the house for the ASEAN Cup nobar.", hook: "The best seat in the nobar", beats: [
-    { time: "0–3s", visual: "A packed café nobar; everyone strains to see a small TV far away", voiceover: "Nggak kelihatan…", onscreen: "" },
-    { time: "3–7s", visual: "He unfolds a Galaxy Z Fold8 on the table; friends lean in to watch the match", voiceover: "Sini, nonton di sini aja.", onscreen: "" },
-    { time: "7–11s", visual: "Goal! The table erupts; someone films the reaction on the cover screen", voiceover: "GOOOL!", onscreen: "Kursi terbaik buat nobar" },
-    { time: "11–15s", visual: "The Fold8 folds shut, ready for the next match; Samsung end card", voiceover: "Galaxy Z Fold8. Pilih foldable dengan yakin.", onscreen: "Galaxy Z Fold8" } ] },
+  { title: "Jakarta jadi ungu", follows: "Capture the Fan Experience: purple-lit Jakarta landmarks and ARMY excitement, captured on the Fold8.", hook: "Jakarta turned purple overnight", beats: [
+    { time: "0–3s", visual: "Night at a Jakarta roundabout landmark lit in purple; a fan in a purple outfit unfolds a Galaxy Z Fold8 to frame it", voiceover: "Jakarta lagi ungu banget!", onscreen: "Purple Jakarta 💜" },
+    { time: "3–7s", visual: "She zooms in on the purple-lit landmark, then stands the half-folded Fold8 on a ledge in Flex Mode for a hands-free group photo", voiceover: "Taruh, foto bareng, beres.", onscreen: "" },
+    { time: "7–11s", visual: "Her friends crowd around the unfolded screen to see the photos, big enough for everyone", voiceover: "Semua kebagian lihat di layar lebar.", onscreen: "Satu layar, semua kebagian" },
+    { time: "11–15s", visual: "The Fold8 closes against the purple city lights; Samsung end card", voiceover: "Galaxy Z Fold8. Siap buat momen besar.", onscreen: "Galaxy Z Fold8" } ] },
+  { title: "Misi: sampai kantor", follows: "Indonesian Life in GTA Mode: the daily commute becomes a game-style mission, with the Fold8 as the in-game gadget.", hook: "Today's mission: reach the office by 9", beats: [
+    { time: "0–3s", visual: "Stylised open-world game look (no real game logos or characters): a young worker in Jakarta traffic as a mission title appears", voiceover: "Misi baru: sampai kantor jam 9.", onscreen: "MISI: SAMPAI KANTOR" },
+    { time: "3–7s", visual: "He unfolds a Galaxy Z Fold8: the map on one side, the team chat on the other", voiceover: "Rute dan chat bos, satu layar.", onscreen: "" },
+    { time: "7–11s", visual: "He weaves through the crowd at a bus stop and walks into the office lobby as a mission-complete banner appears", voiceover: "Misi selesai!", onscreen: "MISI SELESAI" },
+    { time: "11–15s", visual: "At his desk he unfolds the Fold8 to start work; Samsung end card", voiceover: "Galaxy Z Fold8. Hidup sehari-hari, mode main.", onscreen: "Galaxy Z Fold8" } ] },
 ];
 // Prompt style from "[CRE] Prompt Example - Samsung Snowball" (Cheil creative team)
 const DECK_EXAMPLES = `Key visual prompt example:
@@ -214,7 +232,7 @@ SEQUENCE ACCORDING TO THE IMAGE REFERENCE:
 4. The hand reaches both, and the background turns into an airport
 CAMERA: Slow camera movement. Still camera.
 AUDIO: No dialogue.`;
-const RULES = "Never show a competitor brand, logo or name: any other phone appears only as an unbranded dark silhouette. No text, captions, logos or watermarks in the image.";
+const RULES = "Never show a competitor brand, logo or name: any other phone appears only as an unbranded dark silhouette. Never depict real celebrities or musicians, or any real game's characters, logos or artwork: show fans and everyday people, and a generic stylised look. No text, captions, logos or watermarks in the image.";
 
 // ---------- actions ----------
 const A = {};
@@ -249,42 +267,44 @@ A.markFinal = () => {
 
 // --- Strategic Planner ---
 const trendText = (t) => `Name: ${t.name}\nType: ${t.type}\nWhat's trending: ${t.what}\nSample content: ${t.linkNote}`;
-const styleExamples = () => TRENDS.filter((t) => t.links.length).map((t) => `Trend: ${t.name} (${t.type})\nInsight: ${t.sample.insight}\nSo What: ${t.sample.so_what}\nNow What: ${t.sample.now_what}\nStrategic Content Direction: ${t.sample.scd}`).join("\n\n");
+const styleExamples = () => TRENDS.filter((t) => t.id !== (S.trend && S.trend.id)).map((t) => `Trend: ${t.name} (${t.type})\nInsight: ${t.sample.insight}\nSo What: ${t.sample.so_what}\nNow What: ${t.sample.now_what}\nStrategic Content Direction: ${t.sample.scd}\nCreative Opportunities:\n${t.sample.opps.split("\n").map((o) => "- " + o).join("\n")}`).join("\n\n");
+// creative opportunities are kept as text, one "Name: description" per line
+const normOpps = (x) => Array.isArray(x) ? x.map((o) => typeof o === "string" ? o : [o.name || o.title, o.desc || o.description].filter(Boolean).join(": ")).filter(Boolean).join("\n") : String(x || "");
 const SP_SYSTEM = "You are a Strategic Planner at Cheil Indonesia, a creative agency working for Samsung Indonesia. You turn social-listening trends into a sharp strategic direction for 15-second short-form videos. Be specific to Indonesia and to the brief. Never invent product specs or claims.";
 A.pickTrend = (id) => { S.trend = TRENDS.find((t) => t.id === id); save(); render(); };
 A.draftDirection = async () => {
   if (!S.trend) { toast("Pick a trend first."); return; }
   busy.dir = true; render();
   const out = await aiJSON(
-    `Brief:\n${briefText()}\n\nSelected trend from the Trend Library (social listening):\n${trendText(S.trend)}\n\nWrite the trend direction that completes this brief. Use the same structure, length and voice as these write-ups from Cheil's social-listening reports:\n\n${styleExamples()}\n\nReturn JSON with keys: insight (what's trending and the consumer truth behind it), so_what (why does it matter?), now_what (what's the brand opportunity for Samsung, tied to the product in the brief?), scd (the Strategic Content Direction: one sharp line). One or two sentences each, in English.`,
+    `Brief:\n${briefText()}\n\nSelected trend from the Trend Library (social listening):\n${trendText(S.trend)}\n\nWrite the trend direction that completes this brief. Use the same structure, length and voice as these write-ups from Cheil's social-listening reports:\n\n${styleExamples()}\n\nReturn JSON with keys: insight (what's trending and the consumer truth behind it), so_what (why does it matter?), now_what (what's the brand opportunity for Samsung, tied to the product in the brief?), scd (the Strategic Content Direction: one sharp line), opps (the Creative Opportunities: an array of exactly 3 strings, each "Short name: one-sentence description" of a distinct way to execute the direction). One or two sentences each, in English.`,
     SP_SYSTEM);
   const notes = S.direction ? S.direction.notes : "";
-  S.direction = out && out.insight && out.scd ? { insight: out.insight, so_what: out.so_what || "", now_what: out.now_what || "", scd: out.scd, notes } : { ...S.trend.sample, notes, _fb: true };
+  S.direction = out && out.insight && out.scd ? { insight: out.insight, so_what: out.so_what || "", now_what: out.now_what || "", scd: out.scd, opps: normOpps(out.opps) || S.trend.sample.opps, notes } : { ...S.trend.sample, notes, _fb: true };
   S.dirVersions = 1;
   busy.dir = false; save(); render();
 };
 A.reviseDirection = async () => {
   const ins = val("dirrev"); if (!ins) { toast("Type how the direction should change."); return; }
   busy.dirrev = true; render();
-  const cur = { insight: S.direction.insight, so_what: S.direction.so_what, now_what: S.direction.now_what, scd: S.direction.scd };
+  const cur = { insight: S.direction.insight, so_what: S.direction.so_what, now_what: S.direction.now_what, scd: S.direction.scd, opps: String(S.direction.opps || "").split("\n").filter(Boolean) };
   const out = await aiJSON(
-    `Brief:\n${briefText()}\n\nTrend:\n${trendText(S.trend)}\n\nCurrent trend direction (JSON):\n${JSON.stringify(cur)}\n\nInstruction from the Strategic Planner: ${ins}\n\nRewrite the direction following the instruction. Change only what the instruction asks for; keep everything else. Return JSON with the same keys: insight, so_what, now_what, scd.`,
+    `Brief:\n${briefText()}\n\nTrend:\n${trendText(S.trend)}\n\nCurrent trend direction (JSON):\n${JSON.stringify(cur)}\n\nInstruction from the Strategic Planner: ${ins}\n\nRewrite the direction following the instruction. Change only what the instruction asks for; keep everything else. Return JSON with the same keys: insight, so_what, now_what, scd, opps (an array of "Short name: description" strings).`,
     SP_SYSTEM);
-  if (out && out.insight && out.scd) { Object.assign(S.direction, { insight: out.insight, so_what: out.so_what || cur.so_what, now_what: out.now_what || cur.now_what, scd: out.scd }); delete S.direction._fb; S.dirVersions++; delete drafts.dirrev; log("SP", `Revised the trend direction by prompt: “${ins}”.`); }
+  if (out && out.insight && out.scd) { Object.assign(S.direction, { insight: out.insight, so_what: out.so_what || cur.so_what, now_what: out.now_what || cur.now_what, scd: out.scd, opps: normOpps(out.opps) || S.direction.opps }); delete S.direction._fb; S.dirVersions++; delete drafts.dirrev; log("SP", `Revised the trend direction by prompt: “${ins}”.`); }
   else toast("The AI could not revise the direction right now. Edit it by hand instead.");
   busy.dirrev = false; save(); render();
 };
 A.handToCW = () => {
   if (!S.direction) { toast("Draft or write the trend direction first."); return; }
-  advance("script", "SP", `Completed the brief with the trend direction (${S.trend ? S.trend.name : "no trend"}) and handed it to the Copywriter.`);
+  advance("script", "SP", `Completed the brief with the trend direction (${S.trend ? S.trend.name : "no trend"}) and handed it to Creative.`);
 };
 
-// --- Copywriter: up to 5 scripts, one video each ---
-const CW_SYSTEM = "You are a senior copywriter at Cheil Indonesia writing short-form video scripts for Samsung Indonesia. Scripts are fast, local and on-brand. The Strategic Planner's trend direction is binding: every script must execute its Strategic Content Direction and brand opportunity (Now What), use the selected trend's format or behaviour, and follow the planner's notes. Where the copywriter's form conflicts with the direction, the direction wins. Never invent prices, specs or claims not in the brief. Never name a competitor brand.";
-const SCRIPT_SHAPE = `{"title":"2-4 words","hook":"one line","follows":"one sentence: how this script executes the Strategic Content Direction and uses the trend","beats":[{"time":"0–3s","visual":"what we see, one sentence","voiceover":"spoken line in the requested language","onscreen":"short on-screen text or empty"}]}`;
-const cwContext = () => `BINDING DIRECTION from the Strategic Planner (every script must follow it):\n${dirText()}\n\nThe selected trend:\n${S.trend ? trendText(S.trend) : "none"}\n\nBrief:\n${briefText()}\n\nCopywriter's form (apply it within the direction):\n- Hook style: ${S.form.hook}\n- Product focus: ${S.form.focus}\n- Must say: ${S.form.must}\n- Language: ${S.form.lang}\n- Notes: ${S.form.notes || "none"}`;
+// --- Creative (copy): up to 5 scripts, one video each ---
+const CW_SYSTEM = "You are a senior copywriter at Cheil Indonesia writing short-form video scripts for Samsung Indonesia. Scripts are fast, local and on-brand. The Strategic Planner's trend direction is binding: every script must execute its Strategic Content Direction and brand opportunity (Now What), use the selected trend's format or behaviour, and follow the planner's notes. Where Creative's brief form conflicts with the direction, the direction wins. Never invent prices, specs or claims not in the brief. Never name a competitor brand.";
+const SCRIPT_SHAPE = `{"title":"2-4 words","hook":"one line","follows":"one sentence: which Creative Opportunity this script uses and how it executes the Strategic Content Direction","beats":[{"time":"0–3s","visual":"what we see, one sentence","voiceover":"spoken line in the requested language","onscreen":"short on-screen text or empty"}]}`;
+const cwContext = () => `BINDING DIRECTION from the Strategic Planner (every script must follow it):\n${dirText()}\n\nThe selected trend:\n${S.trend ? trendText(S.trend) : "none"}\n\nBrief:\n${briefText()}\n\nCreative's brief form (apply it within the direction):\n- Hook style: ${S.form.hook}\n- Product focus: ${S.form.focus}\n- Must say: ${S.form.must}\n- Language: ${S.form.lang}\n- Notes: ${S.form.notes || "none"}`;
 const cleanScript = (o) => o && Array.isArray(o.beats) && o.beats.length ? { title: o.title || "Untitled", hook: o.hook || "", follows: o.follows || "", key: newKey(), beats: o.beats.slice(0, 6).map((b) => ({ time: b.time || "", visual: b.visual || "", voiceover: b.voiceover || "", onscreen: b.onscreen || "" })), ver: 1 } : null;
-const SAMPLE_FOR = { crackgate: 2, stopwedding: 1, padel: 3, aseancup: 4 };   // offline samples: the one built on the chosen trend comes first
+const SAMPLE_FOR = { crackgate: 2, stopwedding: 1, padel: 3, purplejakarta: 4, gta6: 5 };   // offline samples: the one built on the chosen trend comes first
 const newKey = () => Math.random().toString(36).slice(2, 9);
 const sampleScript = (i) => {
   const m = S.trend ? SAMPLE_FOR[S.trend.id] : 0, order = [m, ...SAMPLE_SCRIPTS.map((_, k) => k).filter((k) => k !== m)];
@@ -295,10 +315,10 @@ A.genScripts = async () => {
   if (S.scripts.length && !confirm(`Replace the ${S.scripts.length} current script(s) with ${n} new ones?`)) return;
   busy.scripts = true; render();
   const out = await aiJSON(
-    `${cwContext()}\n\nWrite ${n} different scripts. Each script is one separate 15-second vertical video. Each must be a distinct execution of the SAME Strategic Content Direction, built on the selected trend, and must follow the planner's notes. Return JSON: {"scripts":[${SCRIPT_SHAPE}]}. Each script has 4 beats that add up to 15 seconds. Use the product name exactly as given and respect the mandatories.`, CW_SYSTEM);
+    `${cwContext()}\n\nWrite ${n} different scripts. Each script is one separate 15-second vertical video. Each must be a distinct execution of the SAME Strategic Content Direction, built on the selected trend, and must follow the planner's notes. Spread the scripts across the Creative Opportunities (one opportunity per script where possible) and name the opportunity in "follows". Return JSON: {"scripts":[${SCRIPT_SHAPE}]}. Each script has 4 beats that add up to 15 seconds. Use the product name exactly as given and respect the mandatories.`, CW_SYSTEM);
   const got = out && Array.isArray(out.scripts) ? out.scripts.map(cleanScript).filter(Boolean).slice(0, n) : [];
   S.scripts = got.length ? got : Array.from({ length: n }, (_, i) => sampleScript(i));
-  busy.scripts = false; log("CW", `Generated ${S.scripts.length} AI scripts (one video each).`); save(); render();
+  busy.scripts = false; log("CR", `Generated ${S.scripts.length} AI scripts (one video each).`); save(); render();
 };
 async function oneScript(avoid) {
   const out = await aiJSON(`${cwContext()}\n\nOther scripts already written for this brief (do not repeat their ideas): ${avoid.join("; ") || "none"}.\n\nWrite ONE new script for a separate 15-second vertical video. It must execute the Strategic Content Direction, use the selected trend and follow the planner's notes. Return only the JSON object: ${SCRIPT_SHAPE}. 4 beats adding up to 15 seconds.`, CW_SYSTEM);
@@ -307,7 +327,7 @@ async function oneScript(avoid) {
 A.newScript = async (i) => {
   i = +i; busy["s" + i] = true; render();
   const s = await oneScript(S.scripts.filter((_, k) => k !== i).map((x) => x.title));
-  if (s) { S.scripts[i] = s; log("CW", `Wrote a new take for script ${i + 1}.`); } else toast("The AI could not write a new take right now.");
+  if (s) { S.scripts[i] = s; log("CR", `Wrote a new take for script ${i + 1}.`); } else toast("The AI could not write a new take right now.");
   busy["s" + i] = false; save(); render();
 };
 A.addScript = async () => {
@@ -315,7 +335,7 @@ A.addScript = async () => {
   busy.add = true; render();
   const s = await oneScript(S.scripts.map((x) => x.title));
   S.scripts.push(s || sampleScript(S.scripts.length));
-  busy.add = false; log("CW", `Added script ${S.scripts.length}.`); save(); render();
+  busy.add = false; log("CR", `Added script ${S.scripts.length}.`); save(); render();
 };
 A.delScript = (i) => { i = +i; if (!confirm(`Delete script ${i + 1}?`)) return; S.scripts.splice(i, 1); save(); render(); };
 A.reviseScript = async (i) => {
@@ -323,10 +343,10 @@ A.reviseScript = async (i) => {
   const ins = val("rv_" + i); if (!ins) { toast("Type how the script should change."); return; }
   busy["s" + i] = true; render();
   const out = await aiJSON(
-    `BINDING DIRECTION from the Strategic Planner (the script must keep following it):\n${dirText()}\n\nCurrent script (JSON):\n${JSON.stringify({ title: s.title, hook: s.hook, follows: s.follows, beats: s.beats })}\n\nBrief mandatories: ${S.brief.mandatories}\nInstruction from the copywriter: ${ins}\n\nRewrite the script following the instruction, without breaking the direction. Keep the same JSON shape (including "follows") and 4 beats adding up to 15 seconds. Return only the JSON object.`,
+    `BINDING DIRECTION from the Strategic Planner (the script must keep following it):\n${dirText()}\n\nCurrent script (JSON):\n${JSON.stringify({ title: s.title, hook: s.hook, follows: s.follows, beats: s.beats })}\n\nBrief mandatories: ${S.brief.mandatories}\nInstruction from Creative: ${ins}\n\nRewrite the script following the instruction, without breaking the direction. Keep the same JSON shape (including "follows") and 4 beats adding up to 15 seconds. Return only the JSON object.`,
     CW_SYSTEM);
   const r = cleanScript(out);
-  if (r) { S.scripts[i] = { ...r, key: s.key || r.key, ver: (s.ver || 1) + 1 }; delete drafts["rv_" + i]; log("CW", `Revised script ${i + 1} by prompt: “${ins}”.`); }
+  if (r) { S.scripts[i] = { ...r, key: s.key || r.key, ver: (s.ver || 1) + 1 }; delete drafts["rv_" + i]; log("CR", `Revised script ${i + 1} by prompt: “${ins}”.`); }
   else toast("The AI could not revise the script right now. Edit it by hand instead.");
   busy["s" + i] = false; save(); render();
 };
@@ -344,10 +364,10 @@ function boardFor(s, i) {
 A.scriptsFinal = () => {
   if (!S.scripts.length) { toast("Write at least one script first."); return; }
   S.boards = S.scripts.map(boardFor); S.selBoard = 0;
-  advance("images", "CW", `Marked ${S.scripts.length} script(s) final: ${S.scripts.map((s) => "“" + s.title + "”").join(", ")}. One board per script, one image per scene.`);
+  advance("images", "CR", `Marked ${S.scripts.length} script(s) final: ${S.scripts.map((s) => "“" + s.title + "”").join(", ")}. One board per script, one image per scene.`);
 };
 
-// --- Art Director: one board per script ---
+// --- Creative (art): one board per script ---
 function newBoard(n) {
   return { n, p: { object: "", background: "", layout: "", camera: "", lighting: "" }, frames: Array.from({ length: n }, () => newFrame()),
     video: { sequence: "", camera: "", audio: "" }, drafted: false, status: "draft", fb: [], check: null, selFrame: 0 };
@@ -376,12 +396,12 @@ async function draftBoard(i) {
   const v = r.video || {}; VIDEO_FIELDS.forEach(([k]) => { b.video[k] = String(v[k] || fb.video[k]); });
   b.drafted = true; b._fb = !ok; b.busy = false; b.sig = sigOf(s); b.stale = false; render();
 }
-A.draftBoard = async (i) => { await draftBoard(+i); log("AD", `Drafted the prompts for board ${+i + 1}.`); save(); render(); };
+A.draftBoard = async (i) => { await draftBoard(+i); log("CR", `Drafted the prompts for board ${+i + 1}.`); save(); render(); };
 A.draftAll = async () => {
   const idx = S.boards.map((b, i) => i).filter((i) => editable(S.boards[i]));
   busy.all = true; render();
   await Promise.all(idx.map(draftBoard));
-  busy.all = false; log("AD", `AI drafted the prompts for ${idx.length} board(s).`); save(); render();
+  busy.all = false; log("CR", `AI drafted the prompts for ${idx.length} board(s).`); save(); render();
 };
 function kvPrompt(b, i, k, hasProduct, hasFirst) {
   const sc = (S.scripts[i].beats[k] || {});
@@ -405,12 +425,12 @@ async function genBoard(i) {
   const first = await genFrame(b, i, 0, null);
   await Promise.all(b.frames.slice(1).map((_, j) => genFrame(b, i, j + 1, first)));
 }
-A.genBoard = async (i) => { i = +i; busy["b" + i] = true; render(); await genBoard(i); busy["b" + i] = false; log("AD", `AI generated ${S.boards[i].n} images for board ${i + 1}, one per scene.`); save(); render(); };
+A.genBoard = async (i) => { i = +i; busy["b" + i] = true; render(); await genBoard(i); busy["b" + i] = false; log("CR", `AI generated ${S.boards[i].n} images for board ${i + 1}, one per scene.`); save(); render(); };
 A.genAll = async () => {
   const idx = S.boards.map((b, i) => i).filter((i) => editable(S.boards[i]));
   busy.all = true; render();
   await Promise.all(idx.map(genBoard));
-  busy.all = false; log("AD", `AI generated the images for ${idx.length} board(s).`); save(); render();
+  busy.all = false; log("CR", `AI generated the images for ${idx.length} board(s).`); save(); render();
 };
 A.selFrame = (v) => { const [i, k] = v.split(":").map(Number); S.boards[i].selFrame = k; save(); render(); };
 A.selVer = (v) => { const [i, k, n] = v.split(":").map(Number); S.boards[i].frames[k].cur = n; save(); render(); };
@@ -423,7 +443,7 @@ A.refine = async (i) => {
   let img = await aiImage(p, [f.versions[f.cur].img, S.productRef]);
   const fb = !img; if (!img) img = placeholder(`Board ${i + 1} · scene ${k + 1} · edited`, i + k + 2, ins);
   f.versions.push({ img, prompt: p, label: ins, fb }); f.cur = f.versions.length - 1; f.busy = false; busy["r" + i] = false; if (!fb) delete drafts["refine_" + i];
-  log("AD", `Revised board ${i + 1}, scene ${k + 1} by prompt: “${ins}”.`); save(); render();
+  log("CR", `Revised board ${i + 1}, scene ${k + 1} by prompt: “${ins}”.`); save(); render();
 };
 A.regenFrame = async (i) => {
   i = +i; const b = S.boards[i], k = b.selFrame; busy["r" + i] = true; render();
@@ -441,10 +461,10 @@ A.submitBoard = () => {
   if (missing.length) { toast(`Generate the images for board ${missing.map((i) => i + 1).join(", ")} first.`); S.selBoard = missing[0]; render(); return; }
   if (S.stage === "board_revision") {
     idx.forEach((i) => { S.boards[i].status = "joint"; });
-    advance("joint_rereview", "AD", `Revised board ${idx.map((i) => i + 1).join(", ")} by prompt after Samsung's feedback; booked the joint re-review.`);
+    advance("joint_rereview", "CR", `Revised board ${idx.map((i) => i + 1).join(", ")} by prompt after Samsung's feedback; booked the joint re-review.`);
   } else {
     idx.forEach((i) => { S.boards[i].status = "internal"; S.boards[i].check = null; });
-    advance("internal_board", "AD", `Submitted ${idx.length} board(s) (script + images + video prompt) for internal review.`);
+    advance("internal_board", "CR", `Submitted ${idx.length} board(s) (script + images + video prompt) for internal review.`);
   }
 };
 
@@ -610,7 +630,7 @@ function waitingFor(st) {
 }
 const spin = (on, busyTxt, txt) => on ? `<span class="spinner"></span> ${busyTxt}` : txt;
 function stageView(st) {
-  const mine = S.role === st.owner || (st.id === "joint_rereview" && S.role === "CL") || (st.id === "board_revision" && S.role === "CW");
+  const mine = S.role === st.owner || (st.id === "joint_rereview" && S.role === "CL");
   const bp = (t) => `<p class="bpmn">BPMN step: ${esc(t)}</p>`;
   const wait = mine ? "" : waitingFor(st);
   const ro = !mine;
@@ -652,23 +672,27 @@ function plannerView(mine, wait, bp) {
     <section class="card"><h2>Trend direction ${d && d._fb ? '<span class="tag-fb">sample</span>' : d ? `<span class="pill ok">AI draft · version ${S.dirVersions} · edit freely</span>` : ""}</h2>
     ${S.trend ? `<p class="muted"><b>Trend:</b> ${esc(S.trend.name)} · ${esc(S.trend.type)}</p>` : ""}
     ${mine ? `<div class="actions"><button class="btn ${d ? "sec" : "ai"}" data-act="draftDirection"${busy.dir ? " disabled" : ""}>${spin(busy.dir, "Drafting…", d ? "Draft again from scratch" : "Draft direction with AI")}</button><span class="note">Uses the brief + the selected trend</span></div>` : ""}
-    ${d ? `${DIR_FIELDS.map(([k, l, r]) => area("dir." + k, l, d[k], ro, r)).join("")}
+    ${d ? `${DIR_FIELDS.map(([k, l, r]) => area("dir." + k, l, d[k] || "", ro, r, k === "opps" ? "One per line, e.g. Transform Jakarta in Purple: reimagine landmarks with purple AI visuals featuring Galaxy" : "")).join("")}
       ${mine ? `<div class="inline"><div class="f"><label for="dirrev">Revise the direction by prompt</label><input id="dirrev" placeholder="e.g. make the Now What about everyday durability, and the direction more playful"></div><button class="btn ai" data-act="reviseDirection"${busy.dirrev ? " disabled" : ""}>${spin(busy.dirrev, "Revising…", "Revise with AI")}</button></div>` : ""}
-      ${area("dir.notes", "Notes (Strategic Planner)", d.notes || "", ro, 5, "Anything the Copywriter and Art Director should know: references, watch-outs, ideas to explore…")}
-      <p class="note">The AI never writes in Notes; revising by prompt changes the four fields above.</p>` : '<p class="muted">Pick a trend, then let the AI draft the direction.</p>'}
-    ${mine && d ? `<div class="actions"><button class="btn" data-act="handToCW">Hand off to Copywriter</button></div>` : ""}</section>`;
+      ${area("dir.notes", "Notes (Strategic Planner)", d.notes || "", ro, 5, "Anything Creative should know: references, watch-outs, ideas to explore…")}
+      <p class="note">The AI never writes in Notes; revising by prompt changes the five fields above.</p>` : '<p class="muted">Pick a trend, then let the AI draft the direction.</p>'}
+    ${mine && d ? `<div class="actions"><button class="btn" data-act="handToCW">Hand off to Creative</button></div>` : ""}</section>`;
+}
+function oppsHTML(t) {
+  const items = String(t || "").split("\n").map((x) => x.trim()).filter(Boolean);
+  return items.length ? `<ul>${items.map((x) => { const m = x.match(/^([^:]{2,60}):\s*(.+)$/); return `<li>${m ? `<b style="display:inline">${esc(m[1])}:</b> ${esc(m[2])}` : esc(x)}</li>`; }).join("")}</ul>` : "–";
 }
 function briefPanel() {
   const d = S.direction, notes = d && d.notes && S.role !== "SS";
   return `<section class="card"><details class="bp"${ui.bpOpen ? " open" : ""}><summary><h2>Complete brief + trend direction <span class="note">From Account and the Strategic Planner</span></h2></summary>
     <div class="ro" style="margin-top:12px">${roBrief()}</div>
     ${d ? `<h3 style="margin-top:16px">Trend: ${esc(S.trend ? S.trend.name : "-")} <span class="pill bau">${esc(S.trend ? S.trend.type : "")}</span></h3>
-      <div class="dirgrid">${DIR_FIELDS.map(([k, l]) => `<div><b>${esc(l)}</b>${esc(d[k])}</div>`).join("")}${notes ? `<div class="wide"><b>Notes from the Strategic Planner</b>${esc(d.notes).replace(/\n/g, "<br>")}</div>` : ""}</div>` : ""}
+      <div class="dirgrid">${DIR_FIELDS.map(([k, l]) => k === "opps" ? `<div class="wide opps"><b>${esc(l)}</b>${oppsHTML(d[k])}</div>` : `<div><b>${esc(l)}</b>${esc(d[k])}</div>`).join("")}${notes ? `<div class="wide"><b>Notes from the Strategic Planner</b>${esc(d.notes).replace(/\n/g, "<br>")}</div>` : ""}</div>` : ""}
   </details></section>`;
 }
 function scriptView(mine, wait, bp) {
   const f = S.form, ro = !mine, n = S.scripts.length;
-  return `${briefPanel()}<section class="card"><h2>Brief form for the AI <span class="pill ok">Step: 1 h</span></h2>${bp("Copywriter · Prompt AI for scripts → edit by hand or by prompt → Scripts final?")}${wait}
+  return `${briefPanel()}<section class="card"><h2>Brief form for the AI <span class="pill ok">Step: 1 h</span></h2>${bp("Creative · Prompt AI for scripts → edit by hand or by prompt → Scripts final?")}${wait}
     <p class="muted">One script makes one video. Write up to ${MAX_SCRIPTS}.</p>
     <div class="g2">${sel("form_hook", "Hook style", f.hook, ["Trend format", "Meme / reaction", "Problem → solution", "Reveal", "POV", "Question"], ro)}${fld("form.focus", "Product focus", f.focus, ro)}</div>
     <div class="g2">${fld("form.must", "Must say", f.must, ro)}${sel("form_lang", "Language", f.lang, ["Bahasa Indonesia, casual", "English", "Bahasa Indonesia + English mix"], ro)}</div>
@@ -691,7 +715,7 @@ function imagesView(st, mine, wait, bp) {
   const nEdit = S.boards.filter(editable).length;
   const fr = b.frames[b.selFrame];
   const lastFb = b.fb[0];
-  return `${briefPanel()}<section class="card"><h2>${rev ? "Revise the boards" : "AI boards · one per script"} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(rev ? "Copywriter + Art Director · Revise board by prompt → joint re-review (BAU)" : "Creative AI · Generate still images → Art Director · Review, refine by prompt → Satisfied?")}${wait}
+  return `${briefPanel()}<section class="card"><h2>${rev ? "Revise the boards" : "AI boards · one per script"} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(rev ? "Creative · Revise board by prompt → joint re-review (BAU)" : "Creative AI · Generate still images → Creative · Review, refine by prompt → Satisfied?")}${wait}
     <div class="g2"><div class="f"><label>Actual product image</label>${S.productRef ? `<div class="actions"><img src="${S.productRef}" alt="Product reference" style="height:64px;border-radius:8px">${mine ? '<button class="btn sec small" data-act="clearRef">Remove</button>' : ""}</div>` : mine ? `<input type="file" accept="image/*" data-change="uploadRef" aria-label="Upload the actual product photo">` : '<p class="muted">None</p>'}<span class="note">${S.productRef ? "Sent with every image prompt so the phone keeps its real shape." : "<b>Add an official Galaxy Z Fold8 photo:</b> every prompt uses it as the reference."}</span></div>
     ${mine ? `<div class="f"><label>All boards</label><div class="actions"><button class="btn sec" data-act="draftAll"${busy.all || !nEdit ? " disabled" : ""}>${spin(busy.all, "Working…", "Draft all prompts with AI")}</button><button class="btn ai" data-act="genAll"${busy.all || !nEdit ? " disabled" : ""}>Generate all boards</button></div><span class="note">${nEdit} board(s) to work on</span></div>` : ""}</div>
     <div class="tabs" role="tablist">${S.boards.map((x, k) => `<button role="tab" class="tab${k === i ? " sel" : ""}" aria-selected="${k === i}" data-act="selBoard" data-v="${k}">Board ${k + 1} · ${esc(S.scripts[k].title)} ${statusPill(x)}</button>`).join("")}</div></section>
@@ -739,7 +763,7 @@ function boardReview(st, mine, wait, bp) {
   const client = st.id !== "internal_board", joint = st.id === "joint_rereview";
   const idx = pendingBoards(), others = S.boards.map((b, i) => i).filter((i) => !idx.includes(i));
   const title = st.id === "internal_board" ? "Internal board review" : st.id === "client_board" ? "Board review" : "Joint re-review (Cheil + Samsung)";
-  const opts = st.id === "internal_board" ? [["approve", "Approve", "Goes to Samsung once every board is approved."], ["revise", "Request revision", "Copywriter and Art Director revise this board by prompt."]]
+  const opts = st.id === "internal_board" ? [["approve", "Approve", "Goes to Samsung once every board is approved."], ["revise", "Request revision", "Creative revises this board by prompt."]]
     : [["approve", "Approve this board", "Ready for production."], ["revise", "Request changes", "One round: Cheil revises, then we re-review together."]];
   const dec = typeof S.decision[st.id] === "object" ? S.decision[st.id] : {};
   const nDone = idx.filter((i) => dec[i]).length;
