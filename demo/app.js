@@ -85,7 +85,7 @@ const fresh = () => ({
   scripts: [],
   productRef: null, boards: [], selBoard: 0,
   decision: {}, comments: [], videos: [], log: [], alerts: [],
-  rounds: { board: 1, content: 1 }, path: [],
+  rounds: { board: 1, content: 1 }, path: [], hist: [],
 });
 
 // ---------- storage (IndexedDB; images are too big for localStorage) ----------
@@ -96,6 +96,7 @@ const DB = {
 };
 let S = fresh();
 let busy = {};            // ui-only: which AI calls are running
+const ui = { bpOpen: true }; // ui-only: brief panel open or closed
 let aiStatus = { ok: null, msg: "AI: checking…" };
 const save = () => DB.set("state", S);
 
@@ -117,6 +118,7 @@ function advance(next, actor, text) {
   S.path.push(S.stage);
   log(actor, text);
   S.stage = next;
+  (S.hist = S.hist || []).push(entrySnap());
   const ns = stageOf(next);
   if (next !== "closed") alertTo(ns.owner, `${ns.label}: “${S.brief.campaign}” is waiting for you.`);
   if (S.follow) S.role = ns.owner;
@@ -163,27 +165,27 @@ function wrap(g, t, x, y, w, lh) { const words = String(t).split(" "); let line 
 
 // ---------- canned fallbacks (only when the AI is unreachable) ----------
 const SAMPLE_SCRIPTS = [
-  { title: "Setipis paspor", hook: "Is that a passport, or a phone?", beats: [
+  { title: "Setipis paspor", follows: "Shows the real thin, foldable Galaxy experience instead of talking about it.", hook: "Is that a passport, or a phone?", beats: [
     { time: "0–3s", visual: "Side view: a passport lies flat on a white table; a hand reaches for it", voiceover: "Cuma paspor?", onscreen: "" },
     { time: "3–7s", visual: "The hand lifts the passport: a closed Galaxy Z Fold8 was hidden underneath, the same size and just as thin", voiceover: "Eh, ada yang ngumpet.", onscreen: "Setipis paspor" },
     { time: "7–11s", visual: "She unfolds the Fold8 in an airport lounge; the big screen opens smoothly", voiceover: "Buka, langsung layar lebar.", onscreen: "" },
     { time: "11–15s", visual: "Phone and passport side by side, then the Samsung end card", voiceover: "Galaxy Z Fold8. Pilih foldable dengan yakin.", onscreen: "Galaxy Z Fold8" } ] },
-  { title: "Stop the checkout", hook: "STOP! Don't pick a foldable blindly", beats: [
+  { title: "Stop the checkout", follows: "Uses the Stop The Wedding warning format to challenge how people choose a foldable.", hook: "STOP! Don't pick a foldable blindly", beats: [
     { time: "0–3s", visual: "In a phone store, a young man is about to pay for a foldable shown only as a dark silhouette; his friend bursts in", voiceover: "STOP! Jangan asal pilih foldable!", onscreen: "Stop the checkout!" },
     { time: "3–7s", visual: "The friend hands him a Galaxy Z Fold8 and folds it open and shut", voiceover: "Cek dulu engselnya, cek dulu layarnya.", onscreen: "" },
     { time: "7–11s", visual: "Both laugh as he tries it himself, folding it again and again", voiceover: "Yang ini dibuat buat dibuka-tutup tiap hari.", onscreen: "Dibuat buat dipakai tiap hari" },
     { time: "11–15s", visual: "He walks out holding the Fold8; Samsung end card", voiceover: "Pilih foldable dengan yakin.", onscreen: "Galaxy Z Fold8" } ] },
-  { title: "Cuma wallpaper", hook: "My screen cracked?! Just kidding", beats: [
+  { title: "Cuma wallpaper", follows: "Turns the screen-crack meme into a real Galaxy Z Fold8 demonstration.", hook: "My screen cracked?! Just kidding", beats: [
     { time: "0–3s", visual: "Close-up: a folded phone screen showing a cracked-glass wallpaper; a friend gasps", voiceover: "Layarnya retak?!", onscreen: "Layar retak?" },
     { time: "3–7s", visual: "A swipe changes the wallpaper: the Galaxy Z Fold8 screen is perfectly fine", voiceover: "Santai, cuma wallpaper.", onscreen: "Cuma wallpaper 😅" },
     { time: "7–11s", visual: "She unfolds the Fold8 to its full screen and scrolls the memes together with her friend", voiceover: "Foldable-ku baik-baik aja.", onscreen: "" },
     { time: "11–15s", visual: "The Fold8 closes with a soft snap; Samsung end card", voiceover: "Galaxy Z Fold8. Yakin dipakai tiap hari.", onscreen: "Galaxy Z Fold8" } ] },
-  { title: "Padel replay", hook: "The phone that filmed the winning shot", beats: [
+  { title: "Padel replay", follows: "Puts Galaxy at the centre of an active, social padel session.", hook: "The phone that filmed the winning shot", beats: [
     { time: "0–3s", visual: "Evening padel court in Jakarta; a half-folded Galaxy Z Fold8 stands on the bench, filming", voiceover: "Match kedua, siap?", onscreen: "" },
     { time: "3–7s", visual: "Fast rally, a winning smash, friends cheer", voiceover: "Smash!", onscreen: "" },
     { time: "7–11s", visual: "The group crowds around the unfolded Fold8 to watch the replay on the big screen", voiceover: "Replay-nya jelas banget.", onscreen: "Replay di layar lebar" },
     { time: "11–15s", visual: "Selfie with the cover screen as the group poses; Samsung end card", voiceover: "Galaxy Z Fold8, teman main kamu.", onscreen: "Galaxy Z Fold8" } ] },
-  { title: "Nobar layar lebar", hook: "The best seat in the nobar", beats: [
+  { title: "Nobar layar lebar", follows: "Makes the Fold8's big screen the best seat in the house for the ASEAN Cup nobar.", hook: "The best seat in the nobar", beats: [
     { time: "0–3s", visual: "A packed café nobar; everyone strains to see a small TV far away", voiceover: "Nggak kelihatan…", onscreen: "" },
     { time: "3–7s", visual: "He unfolds a Galaxy Z Fold8 on the table; friends lean in to watch the match", voiceover: "Sini, nonton di sini aja.", onscreen: "" },
     { time: "7–11s", visual: "Goal! The table erupts; someone films the reaction on the cover screen", voiceover: "GOOOL!", onscreen: "Kursi terbaik buat nobar" },
@@ -220,6 +222,25 @@ A.role = (v) => { S.role = v; save(); render(); };
 A.follow = (v, el) => { S.follow = el.checked; save(); };
 A.reset = async () => { if (!confirm("Start the demo again from a new brief?")) return; const keepRef = S.productRef; S = fresh(); S.productRef = keepRef; await save(); render(); };
 A.switchTo = (r) => { S.role = r; save(); render(); };
+// Back one step: each step saves its workflow state when it is entered (step, SLA clock, board statuses).
+// Going back restores the previous step as it was when it began. The work itself (direction, scripts,
+// boards, images, videos) is kept.
+const START_SNAP = { stage: "brief", elapsed: 0, started: false, path: [], rounds: { board: 1, content: 1 }, statuses: [] };
+function entrySnap() { return { stage: S.stage, elapsed: S.elapsed, started: S.started, path: S.path.slice(), rounds: { ...S.rounds }, statuses: S.boards.map((b) => b.status) }; }
+const prevSnap = () => { const h = S.hist || []; return h.length > 1 ? h.at(-2) : START_SNAP; };
+A.back = () => {
+  const h = S.hist || [];
+  if (!h.length) { toast("This is the first step."); return; }
+  if (Object.values(busy).some(Boolean)) { toast("Wait for the AI to finish first."); return; }
+  const snap = JSON.parse(JSON.stringify(prevSnap())), from = stageOf(S.stage).label, to = stageOf(snap.stage);
+  delete S.decision[S.stage];
+  S.stage = snap.stage; S.elapsed = snap.elapsed; S.started = snap.started; S.path = snap.path; S.rounds = snap.rounds;
+  S.boards.forEach((b, i) => { if (snap.statuses[i]) b.status = snap.statuses[i]; });
+  h.pop();
+  log(to.owner, `Went back from ${from} to ${to.label}. Work done so far is kept.`);
+  if (S.follow) S.role = to.owner;
+  save(); render(); window.scrollTo({ top: 0, behavior: "smooth" });
+};
 
 A.markFinal = () => {
   S.started = true; S.elapsed = 0;
@@ -259,23 +280,28 @@ A.handToCW = () => {
 };
 
 // --- Copywriter: up to 5 scripts, one video each ---
-const CW_SYSTEM = "You are a senior copywriter at Cheil Indonesia writing short-form video scripts for Samsung Indonesia. Scripts are fast, local and on-brand. Never invent prices, specs or claims not in the brief. Never name a competitor brand.";
-const SCRIPT_SHAPE = `{"title":"2-4 words","hook":"one line","beats":[{"time":"0–3s","visual":"what we see, one sentence","voiceover":"spoken line in the requested language","onscreen":"short on-screen text or empty"}]}`;
-const cwContext = () => `Brief:\n${briefText()}\n\nTrend direction from the Strategic Planner:\n${dirText()}\n\nCopywriter's form:\n- Hook style: ${S.form.hook}\n- Product focus: ${S.form.focus}\n- Must say: ${S.form.must}\n- Language: ${S.form.lang}\n- Notes: ${S.form.notes || "none"}`;
-const cleanScript = (o) => o && Array.isArray(o.beats) && o.beats.length ? { title: o.title || "Untitled", hook: o.hook || "", beats: o.beats.slice(0, 6).map((b) => ({ time: b.time || "", visual: b.visual || "", voiceover: b.voiceover || "", onscreen: b.onscreen || "" })), ver: 1 } : null;
-const sampleScript = (i) => ({ ...JSON.parse(JSON.stringify(SAMPLE_SCRIPTS[i % SAMPLE_SCRIPTS.length])), ver: 1, _fb: true });
+const CW_SYSTEM = "You are a senior copywriter at Cheil Indonesia writing short-form video scripts for Samsung Indonesia. Scripts are fast, local and on-brand. The Strategic Planner's trend direction is binding: every script must execute its Strategic Content Direction and brand opportunity (Now What), use the selected trend's format or behaviour, and follow the planner's notes. Where the copywriter's form conflicts with the direction, the direction wins. Never invent prices, specs or claims not in the brief. Never name a competitor brand.";
+const SCRIPT_SHAPE = `{"title":"2-4 words","hook":"one line","follows":"one sentence: how this script executes the Strategic Content Direction and uses the trend","beats":[{"time":"0–3s","visual":"what we see, one sentence","voiceover":"spoken line in the requested language","onscreen":"short on-screen text or empty"}]}`;
+const cwContext = () => `BINDING DIRECTION from the Strategic Planner (every script must follow it):\n${dirText()}\n\nThe selected trend:\n${S.trend ? trendText(S.trend) : "none"}\n\nBrief:\n${briefText()}\n\nCopywriter's form (apply it within the direction):\n- Hook style: ${S.form.hook}\n- Product focus: ${S.form.focus}\n- Must say: ${S.form.must}\n- Language: ${S.form.lang}\n- Notes: ${S.form.notes || "none"}`;
+const cleanScript = (o) => o && Array.isArray(o.beats) && o.beats.length ? { title: o.title || "Untitled", hook: o.hook || "", follows: o.follows || "", key: newKey(), beats: o.beats.slice(0, 6).map((b) => ({ time: b.time || "", visual: b.visual || "", voiceover: b.voiceover || "", onscreen: b.onscreen || "" })), ver: 1 } : null;
+const SAMPLE_FOR = { crackgate: 2, stopwedding: 1, padel: 3, aseancup: 4 };   // offline samples: the one built on the chosen trend comes first
+const newKey = () => Math.random().toString(36).slice(2, 9);
+const sampleScript = (i) => {
+  const m = S.trend ? SAMPLE_FOR[S.trend.id] : 0, order = [m, ...SAMPLE_SCRIPTS.map((_, k) => k).filter((k) => k !== m)];
+  return { ...JSON.parse(JSON.stringify(SAMPLE_SCRIPTS[order[i % order.length]])), ver: 1, key: newKey(), _fb: true };
+};
 A.genScripts = async () => {
   const n = Math.max(1, Math.min(MAX_SCRIPTS, parseInt(S.form.n, 10) || 5));
   if (S.scripts.length && !confirm(`Replace the ${S.scripts.length} current script(s) with ${n} new ones?`)) return;
   busy.scripts = true; render();
   const out = await aiJSON(
-    `${cwContext()}\n\nWrite ${n} different scripts. Each script is one separate 15-second vertical video, so make each a distinct idea built on the trend direction. Return JSON: {"scripts":[${SCRIPT_SHAPE}]}. Each script has 4 beats that add up to 15 seconds. Use the product name exactly as given and respect the mandatories.`, CW_SYSTEM);
+    `${cwContext()}\n\nWrite ${n} different scripts. Each script is one separate 15-second vertical video. Each must be a distinct execution of the SAME Strategic Content Direction, built on the selected trend, and must follow the planner's notes. Return JSON: {"scripts":[${SCRIPT_SHAPE}]}. Each script has 4 beats that add up to 15 seconds. Use the product name exactly as given and respect the mandatories.`, CW_SYSTEM);
   const got = out && Array.isArray(out.scripts) ? out.scripts.map(cleanScript).filter(Boolean).slice(0, n) : [];
   S.scripts = got.length ? got : Array.from({ length: n }, (_, i) => sampleScript(i));
   busy.scripts = false; log("CW", `Generated ${S.scripts.length} AI scripts (one video each).`); save(); render();
 };
 async function oneScript(avoid) {
-  const out = await aiJSON(`${cwContext()}\n\nOther scripts already written for this brief (do not repeat their ideas): ${avoid.join("; ") || "none"}.\n\nWrite ONE new script for a separate 15-second vertical video. Return only the JSON object: ${SCRIPT_SHAPE}. 4 beats adding up to 15 seconds.`, CW_SYSTEM);
+  const out = await aiJSON(`${cwContext()}\n\nOther scripts already written for this brief (do not repeat their ideas): ${avoid.join("; ") || "none"}.\n\nWrite ONE new script for a separate 15-second vertical video. It must execute the Strategic Content Direction, use the selected trend and follow the planner's notes. Return only the JSON object: ${SCRIPT_SHAPE}. 4 beats adding up to 15 seconds.`, CW_SYSTEM);
   return cleanScript(out && out.script ? out.script : out);
 }
 A.newScript = async (i) => {
@@ -297,17 +323,28 @@ A.reviseScript = async (i) => {
   const ins = val("rv_" + i); if (!ins) { toast("Type how the script should change."); return; }
   busy["s" + i] = true; render();
   const out = await aiJSON(
-    `Current script (JSON):\n${JSON.stringify({ title: s.title, hook: s.hook, beats: s.beats })}\n\nBrief mandatories: ${S.brief.mandatories}\nInstruction from the copywriter: ${ins}\n\nRewrite the script following the instruction. Keep the same JSON shape and 4 beats adding up to 15 seconds. Return only the JSON object.`,
+    `BINDING DIRECTION from the Strategic Planner (the script must keep following it):\n${dirText()}\n\nCurrent script (JSON):\n${JSON.stringify({ title: s.title, hook: s.hook, follows: s.follows, beats: s.beats })}\n\nBrief mandatories: ${S.brief.mandatories}\nInstruction from the copywriter: ${ins}\n\nRewrite the script following the instruction, without breaking the direction. Keep the same JSON shape (including "follows") and 4 beats adding up to 15 seconds. Return only the JSON object.`,
     CW_SYSTEM);
   const r = cleanScript(out);
-  if (r) { S.scripts[i] = { ...r, ver: (s.ver || 1) + 1 }; delete drafts["rv_" + i]; log("CW", `Revised script ${i + 1} by prompt: “${ins}”.`); }
+  if (r) { S.scripts[i] = { ...r, key: s.key || r.key, ver: (s.ver || 1) + 1 }; delete drafts["rv_" + i]; log("CW", `Revised script ${i + 1} by prompt: “${ins}”.`); }
   else toast("The AI could not revise the script right now. Edit it by hand instead.");
   busy["s" + i] = false; save(); render();
 };
+const sigOf = (s) => JSON.stringify(s.beats.map((b) => b.visual));
+function boardFor(s, i) {
+  s.key = s.key || newKey();
+  const n = s.beats.length;
+  const b = S.boards.find((x) => x.key === s.key) || (S.boards[i] && !S.boards[i].key ? S.boards[i] : null) || newBoard(n);
+  b.key = s.key;
+  while (b.frames.length < n) b.frames.push(newFrame());
+  b.frames.length = n; b.n = n; b.selFrame = Math.min(b.selFrame || 0, n - 1);
+  if (b.sig && b.sig !== sigOf(s)) { b.drafted = false; b.stale = true; }
+  return b;
+}
 A.scriptsFinal = () => {
   if (!S.scripts.length) { toast("Write at least one script first."); return; }
-  S.boards = S.scripts.map(() => newBoard(2)); S.selBoard = 0;
-  advance("images", "CW", `Marked ${S.scripts.length} script(s) final: ${S.scripts.map((s) => "“" + s.title + "”").join(", ")}. One board and one video per script.`);
+  S.boards = S.scripts.map(boardFor); S.selBoard = 0;
+  advance("images", "CW", `Marked ${S.scripts.length} script(s) final: ${S.scripts.map((s) => "“" + s.title + "”").join(", ")}. One board per script, one image per scene.`);
 };
 
 // --- Art Director: one board per script ---
@@ -318,14 +355,8 @@ function newBoard(n) {
 const newFrame = () => ({ pose: "", versions: [], cur: -1, busy: false });
 const editable = (b) => (S.stage === "images" && (b.status === "draft" || b.status === "int_rev")) || (S.stage === "board_revision" && b.status === "client_rev");
 A.selBoard = (i) => { S.selBoard = +i; save(); render(); };
-A.setN = (v, el) => {
-  const b = S.boards[+el.dataset.i]; const n = Math.max(1, Math.min(3, +v));
-  while (b.frames.length < n) b.frames.push(newFrame());
-  b.frames.length = n; b.n = n; b.selFrame = Math.min(b.selFrame, n - 1); save(); render();
-};
 function boardFallback(b, s) {
-  const n = b.n, L = s.beats.length;
-  const poses = Array.from({ length: n }, (_, k) => s.beats[Math.round(n === 1 ? (L - 1) / 2 : k * (L - 1) / (n - 1))].visual);
+  const poses = s.beats.map((x) => x.visual);
   return { poses, object: `${S.brief.product} as the reference. DON'T CHANGE THE SHAPE OF THE PHONE. The phone shape needs to be exactly as real as the real phone.`,
     background: "White limbo. Some objects for contextual supporting objects.", layout: "No text. No logo. I just need the image.",
     camera: "Key visual camera. Samsung style. Editorial fashion. Exaggerated angle. Dynamic pose.", lighting: "White-ish, bright, natural light.",
@@ -335,15 +366,15 @@ async function draftBoard(i) {
   const b = S.boards[i], s = S.scripts[i];
   b.busy = true; render();
   const out = await aiJSON(
-    `Brief:\n${briefText()}\n\nTrend direction:\n${dirText()}\n\nScript ${i + 1} (one 15-second video):\n${scriptText(s)}\n\nWrite the image prompts for this script's board: ${b.n === 1 ? "one composed key visual" : b.n + " key visual stills in order (for example a start frame and an end frame)"} that production will animate into the video in Flow. Follow Cheil's prompt format exactly, like these examples:\n\n${DECK_EXAMPLES}\n\nReturn JSON: {"poses":[${b.n} strings, the POSE for each image in order],"object":"...","background":"...","layout":"...","camera":"...","lighting":"...","video":{"sequence":"numbered steps that follow the order of the images","camera":"...","audio":"..."}}.\nRules: OBJECT names ${S.brief.product} as the reference and says DON'T CHANGE THE SHAPE OF THE PHONE. LAYOUT says No text. No logo. Competitor phones appear only as an unbranded dark silhouette. Keep each field short and concrete. English.`,
-    "You are a senior Art Director at Cheil Indonesia writing image-generation prompts for Samsung Indonesia key visuals. You write short, sectioned prompts in the team's house format.");
+    `BINDING DIRECTION from the Strategic Planner:\n${dirText()}\n\nBrief:\n${briefText()}\n\nScript ${i + 1} (one 15-second video, ${b.n} scenes):\n${scriptText(s)}\n\nWrite this script's board: exactly ${b.n} key visual stills, ONE PER SCENE, in scene order. POSE k must show scene k's Visual from the script (same people, action, setting and product moment), staged in the selected trend's format and the Strategic Content Direction. Keep people, styling and setting consistent across scenes. Production will animate the stills into the video in Flow. Follow Cheil's prompt format exactly, like these examples:\n\n${DECK_EXAMPLES}\n\nReturn JSON: {"poses":[exactly ${b.n} strings, the POSE for scene 1 to scene ${b.n}],"object":"...","background":"...","layout":"...","camera":"...","lighting":"...","video":{"sequence":"numbered steps, one per scene, following the order of the images","camera":"...","audio":"..."}}.\nRules: OBJECT names ${S.brief.product} as the reference and says DON'T CHANGE THE SHAPE OF THE PHONE. LAYOUT says No text. No logo. Competitor phones appear only as an unbranded dark silhouette. Keep each field short and concrete. English.`,
+    "You are a senior Art Director at Cheil Indonesia writing image-generation prompts for Samsung Indonesia key visuals. You write short, sectioned prompts in the team's house format. The script and the Strategic Planner's direction are binding: you visualise them, you do not reinvent them.");
   const fb = boardFallback(b, s);
   const ok = out && Array.isArray(out.poses) && out.poses.length && out.object;
   const r = ok ? out : fb;
   b.frames.forEach((f, k) => { f.pose = String((r.poses || [])[k] || fb.poses[k]); });
   PROMPT_FIELDS.forEach(([k]) => { b.p[k] = String(r[k] || fb[k]); });
   const v = r.video || {}; VIDEO_FIELDS.forEach(([k]) => { b.video[k] = String(v[k] || fb.video[k]); });
-  b.drafted = true; b._fb = !ok; b.busy = false; render();
+  b.drafted = true; b._fb = !ok; b.busy = false; b.sig = sigOf(s); b.stale = false; render();
 }
 A.draftBoard = async (i) => { await draftBoard(+i); log("AD", `Drafted the prompts for board ${+i + 1}.`); save(); render(); };
 A.draftAll = async () => {
@@ -352,18 +383,19 @@ A.draftAll = async () => {
   await Promise.all(idx.map(draftBoard));
   busy.all = false; log("AD", `AI drafted the prompts for ${idx.length} board(s).`); save(); render();
 };
-function kvPrompt(b, k, hasProduct, hasFirst) {
+function kvPrompt(b, i, k, hasProduct, hasFirst) {
+  const sc = (S.scripts[i].beats[k] || {});
   const refs = [];
   if (hasProduct) refs.push(`Attached image ${refs.length + 1} is the actual product photo of the ${S.brief.product}: copy its exact shape, proportions, hinge, cameras and colour.`);
-  if (hasFirst) refs.push(`Attached image ${refs.length + 1} is image 1 of this same board: keep the same setting, people, styling and product so the images read as one sequence.`);
+  if (hasFirst) refs.push(`Attached image ${refs.length + 1} is scene 1 of this same board: keep the same setting, people, styling and product so the scenes read as one video.`);
   if (!hasProduct) refs.push("No product photo is attached: show a slim book-style foldable phone with no visible branding.");
-  return `POSE:\n${b.frames[k].pose}\n\nOBJECT:\n${b.p.object}\n\nBACKGROUND:\n${b.p.background}\n\nLAYOUT:\n${b.p.layout}\n\nCAMERA:\n${b.p.camera}\n\nLIGHTING AND TONE:\n${b.p.lighting}\n\n${b.n > 1 ? `This is image ${k + 1} of ${b.n} in a sequence for one 15-second video.\n` : ""}${refs.join("\n")}\n${RULES}\nVertical 9:16.`;
+  return `POSE:\n${b.frames[k].pose}\n\nOBJECT:\n${b.p.object}\n\nBACKGROUND:\n${b.p.background}\n\nLAYOUT:\n${b.p.layout}\n\nCAMERA:\n${b.p.camera}\n\nLIGHTING AND TONE:\n${b.p.lighting}\n\nThis is scene ${k + 1} of ${b.n}${sc.time ? " (" + sc.time + ")" : ""} of one 15-second video. The scene in the script: ${sc.visual || ""}\n${refs.join("\n")}\n${RULES}\nVertical 9:16.`;
 }
 async function genFrame(b, i, k, first) {
   const f = b.frames[k]; f.busy = true; render();
-  const prompt = kvPrompt(b, k, !!S.productRef, !!first);
+  const prompt = kvPrompt(b, i, k, !!S.productRef, !!first);
   let img = await aiImage(prompt, [S.productRef, first]);
-  const fb = !img; if (!img) img = placeholder(`Board ${i + 1} · image ${k + 1}`, i + k, f.pose);
+  const fb = !img; if (!img) img = placeholder(`Board ${i + 1} · scene ${k + 1}`, i + k, f.pose);
   f.versions.push({ img, prompt, label: f.versions.length ? "New take" : "Generated", fb }); f.cur = f.versions.length - 1; f.busy = false; render();
   return fb ? null : img;
 }
@@ -373,7 +405,7 @@ async function genBoard(i) {
   const first = await genFrame(b, i, 0, null);
   await Promise.all(b.frames.slice(1).map((_, j) => genFrame(b, i, j + 1, first)));
 }
-A.genBoard = async (i) => { i = +i; busy["b" + i] = true; render(); await genBoard(i); busy["b" + i] = false; log("AD", `AI generated ${S.boards[i].n} image(s) for board ${i + 1}.`); save(); render(); };
+A.genBoard = async (i) => { i = +i; busy["b" + i] = true; render(); await genBoard(i); busy["b" + i] = false; log("AD", `AI generated ${S.boards[i].n} images for board ${i + 1}, one per scene.`); save(); render(); };
 A.genAll = async () => {
   const idx = S.boards.map((b, i) => i).filter((i) => editable(S.boards[i]));
   busy.all = true; render();
@@ -389,9 +421,9 @@ A.refine = async (i) => {
   f.busy = true; busy["r" + i] = true; render();
   const p = `Revision prompt:\n${ins}\n\nKeep everything else in the image the same (composition, setting, people and product) unless the revision says otherwise. DON'T CHANGE THE SHAPE OF THE PHONE.${S.productRef ? " The second attached image is the actual product photo for reference." : ""}\n${RULES}\nVertical 9:16.`;
   let img = await aiImage(p, [f.versions[f.cur].img, S.productRef]);
-  const fb = !img; if (!img) img = placeholder(`Board ${i + 1} · image ${k + 1} · edited`, i + k + 2, ins);
+  const fb = !img; if (!img) img = placeholder(`Board ${i + 1} · scene ${k + 1} · edited`, i + k + 2, ins);
   f.versions.push({ img, prompt: p, label: ins, fb }); f.cur = f.versions.length - 1; f.busy = false; busy["r" + i] = false; if (!fb) delete drafts["refine_" + i];
-  log("AD", `Revised board ${i + 1}, image ${k + 1} by prompt: “${ins}”.`); save(); render();
+  log("AD", `Revised board ${i + 1}, scene ${k + 1} by prompt: “${ins}”.`); save(); render();
 };
 A.regenFrame = async (i) => {
   i = +i; const b = S.boards[i], k = b.selFrame; busy["r" + i] = true; render();
@@ -516,7 +548,7 @@ function syncAll() {
 }
 const briefText = () => `Campaign: ${S.brief.campaign}\nProduct: ${S.brief.product}\nObjective: ${S.brief.objective}\nKey message: ${S.brief.message}\nAudience: ${S.brief.audience}\nChannels: ${S.brief.channels}\nReady to post: ${S.brief.ready}\nMandatories: ${S.brief.mandatories}\nOutput: up to ${S.brief.videos} short-form videos, 15 seconds each, one script per video`;
 const dirText = () => S.direction ? `Trend: ${S.trend ? S.trend.name + " (" + S.trend.type + ")" : "-"}\n${DIR_FIELDS.map(([k, l]) => `${l}: ${S.direction[k]}`).join("\n")}\nPlanner's notes: ${S.direction.notes || "none"}` : "none";
-const scriptText = (s) => `Title: ${s.title}\nHook: ${s.hook}\n${s.beats.map((b) => `${b.time} | Visual: ${b.visual} | VO: ${b.voiceover} | On screen: ${b.onscreen || "-"}`).join("\n")}`;
+const scriptText = (s) => `Title: ${s.title}\nHook: ${s.hook}\nHow it follows the direction: ${s.follows || "-"}\n${s.beats.map((b, k) => `Scene ${k + 1} · ${b.time} | Visual: ${b.visual} | VO: ${b.voiceover} | On screen: ${b.onscreen || "-"}`).join("\n")}`;
 
 // ---------- video player ----------
 let timers = {};
@@ -553,7 +585,7 @@ function topbar() {
 function head() {
   const n = S.boards.length || S.brief.videos;
   return `<div class="head"><div><h1>${esc(S.brief.campaign)}</h1><p>${esc(S.brief.product)} · ${S.boards.length ? n : "up to " + n} short-form videos, 15 s each, one script per video · BAU workflow</p></div>
-  <div class="actions"><span class="pill bau">BAU</span><span class="pill navy">Now: ${esc(stageOf(S.stage).label)}</span></div></div>`;
+  <div class="actions">${(S.hist || []).length ? `<button class="btn sec small" data-act="back">← Back to ${esc(stageOf(prevSnap().stage).label)}</button>` : ""}<span class="pill bau">BAU</span><span class="pill navy">Now: ${esc(stageOf(S.stage).label)}</span></div></div>`;
 }
 function stepper() {
   const done = new Set(S.path);
@@ -626,17 +658,17 @@ function plannerView(mine, wait, bp) {
       <p class="note">The AI never writes in Notes; revising by prompt changes the four fields above.</p>` : '<p class="muted">Pick a trend, then let the AI draft the direction.</p>'}
     ${mine && d ? `<div class="actions"><button class="btn" data-act="handToCW">Hand off to Copywriter</button></div>` : ""}</section>`;
 }
-function briefPanel(open) {
-  const d = S.direction;
-  return `<section class="card"><details class="bp"${open ? " open" : ""}><summary><h2>Complete brief + trend direction <span class="note">From Account and the Strategic Planner</span></h2></summary>
+function briefPanel() {
+  const d = S.direction, notes = d && d.notes && S.role !== "SS";
+  return `<section class="card"><details class="bp"${ui.bpOpen ? " open" : ""}><summary><h2>Complete brief + trend direction <span class="note">From Account and the Strategic Planner</span></h2></summary>
     <div class="ro" style="margin-top:12px">${roBrief()}</div>
     ${d ? `<h3 style="margin-top:16px">Trend: ${esc(S.trend ? S.trend.name : "-")} <span class="pill bau">${esc(S.trend ? S.trend.type : "")}</span></h3>
-      <div class="dirgrid">${DIR_FIELDS.map(([k, l]) => `<div><b>${esc(l)}</b>${esc(d[k])}</div>`).join("")}${d.notes ? `<div class="wide"><b>Notes from the Strategic Planner</b>${esc(d.notes).replace(/\n/g, "<br>")}</div>` : ""}</div>` : ""}
+      <div class="dirgrid">${DIR_FIELDS.map(([k, l]) => `<div><b>${esc(l)}</b>${esc(d[k])}</div>`).join("")}${notes ? `<div class="wide"><b>Notes from the Strategic Planner</b>${esc(d.notes).replace(/\n/g, "<br>")}</div>` : ""}</div>` : ""}
   </details></section>`;
 }
 function scriptView(mine, wait, bp) {
   const f = S.form, ro = !mine, n = S.scripts.length;
-  return `${briefPanel(true)}<section class="card"><h2>Brief form for the AI <span class="pill ok">Step: 1 h</span></h2>${bp("Copywriter · Prompt AI for scripts → edit by hand or by prompt → Scripts final?")}${wait}
+  return `${briefPanel()}<section class="card"><h2>Brief form for the AI <span class="pill ok">Step: 1 h</span></h2>${bp("Copywriter · Prompt AI for scripts → edit by hand or by prompt → Scripts final?")}${wait}
     <p class="muted">One script makes one video. Write up to ${MAX_SCRIPTS}.</p>
     <div class="g2">${sel("form_hook", "Hook style", f.hook, ["Trend format", "Meme / reaction", "Problem → solution", "Reveal", "POV", "Question"], ro)}${fld("form.focus", "Product focus", f.focus, ro)}</div>
     <div class="g2">${fld("form.must", "Must say", f.must, ro)}${sel("form_lang", "Language", f.lang, ["Bahasa Indonesia, casual", "English", "Bahasa Indonesia + English mix"], ro)}</div>
@@ -644,6 +676,7 @@ function scriptView(mine, wait, bp) {
     ${mine ? `<div class="actions"><button class="btn ai" data-act="genScripts"${busy.scripts ? " disabled" : ""}>${spin(busy.scripts, "Writing scripts…", n ? "Write all scripts again" : "Generate scripts")}</button></div>` : ""}</section>
     ${S.scripts.map((s, i) => `<section class="card"><h2><span>Script ${i + 1} · ${esc(s.title)} <span class="note">→ Video ${i + 1} · version ${s.ver || 1}</span></span>${s._fb ? '<span class="tag-fb">sample</span>' : '<span class="pill ok">AI draft</span>'}</h2>
       <p class="muted"><b>Hook:</b> ${esc(s.hook)}</p>
+      ${s.follows ? `<p class="follows"><b>Follows the direction:</b> ${esc(s.follows)}</p>` : ""}
       <table class="beats"><thead><tr><th>Time</th><th>Visual</th><th>Voice-over</th><th>On screen</th></tr></thead><tbody>${s.beats.map((b, k) => `<tr><td style="white-space:nowrap">${esc(b.time)}</td>${["visual", "voiceover", "onscreen"].map((x) => `<td><textarea id="bt_${i}_${k}_${x}" rows="3" data-beat="${i}:${k}:${x}" aria-label="Script ${i + 1} ${x} ${k + 1}"${mine ? "" : " readonly"}>${esc(b[x])}</textarea></td>`).join("")}</tr>`).join("")}</tbody></table>
       ${mine ? `<div class="inline"><div class="f"><label for="rv_${i}">Revise script ${i + 1} by prompt</label><input id="rv_${i}" placeholder="e.g. make the hook faster and land the key message in the last beat"></div><button class="btn ai" data-act="reviseScript" data-v="${i}"${busy["s" + i] ? " disabled" : ""}>${spin(busy["s" + i], "Working…", "Revise with AI")}</button><button class="btn sec" data-act="newScript" data-v="${i}"${busy["s" + i] ? " disabled" : ""}>New take</button><button class="btn danger" data-act="delScript" data-v="${i}">Delete</button></div>` : ""}</section>`).join("")}
     ${mine && n ? `<section class="card"><div class="actions">${n < MAX_SCRIPTS ? `<button class="btn sec" data-act="addScript"${busy.add ? " disabled" : ""}>${spin(busy.add, "Writing…", "+ Add a script")}</button>` : ""}<button class="btn" data-act="scriptsFinal">Mark ${n} script${n > 1 ? "s" : ""} final · one board each</button><span class="note">${n} of ${MAX_SCRIPTS} scripts = ${n} video${n > 1 ? "s" : ""}</span></div></section>` : ""}`;
@@ -658,7 +691,7 @@ function imagesView(st, mine, wait, bp) {
   const nEdit = S.boards.filter(editable).length;
   const fr = b.frames[b.selFrame];
   const lastFb = b.fb[0];
-  return `${briefPanel(true)}<section class="card"><h2>${rev ? "Revise the boards" : "AI boards · one per script"} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(rev ? "Copywriter + Art Director · Revise board by prompt → joint re-review (BAU)" : "Creative AI · Generate still images → Art Director · Review, refine by prompt → Satisfied?")}${wait}
+  return `${briefPanel()}<section class="card"><h2>${rev ? "Revise the boards" : "AI boards · one per script"} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(rev ? "Copywriter + Art Director · Revise board by prompt → joint re-review (BAU)" : "Creative AI · Generate still images → Art Director · Review, refine by prompt → Satisfied?")}${wait}
     <div class="g2"><div class="f"><label>Actual product image</label>${S.productRef ? `<div class="actions"><img src="${S.productRef}" alt="Product reference" style="height:64px;border-radius:8px">${mine ? '<button class="btn sec small" data-act="clearRef">Remove</button>' : ""}</div>` : mine ? `<input type="file" accept="image/*" data-change="uploadRef" aria-label="Upload the actual product photo">` : '<p class="muted">None</p>'}<span class="note">${S.productRef ? "Sent with every image prompt so the phone keeps its real shape." : "<b>Add an official Galaxy Z Fold8 photo:</b> every prompt uses it as the reference."}</span></div>
     ${mine ? `<div class="f"><label>All boards</label><div class="actions"><button class="btn sec" data-act="draftAll"${busy.all || !nEdit ? " disabled" : ""}>${spin(busy.all, "Working…", "Draft all prompts with AI")}</button><button class="btn ai" data-act="genAll"${busy.all || !nEdit ? " disabled" : ""}>Generate all boards</button></div><span class="note">${nEdit} board(s) to work on</span></div>` : ""}</div>
     <div class="tabs" role="tablist">${S.boards.map((x, k) => `<button role="tab" class="tab${k === i ? " sel" : ""}" aria-selected="${k === i}" data-act="selBoard" data-v="${k}">Board ${k + 1} · ${esc(S.scripts[k].title)} ${statusPill(x)}</button>`).join("")}</div></section>
@@ -667,34 +700,35 @@ function imagesView(st, mine, wait, bp) {
     ${!editable(b) ? `<p class="muted">This board is ${esc((STATUS[b.status] || [""])[0].toLowerCase())} and locked this round.</p>` : ""}
     <details><summary class="note">Script ${i + 1}: ${esc(s.hook)}</summary>${scriptTable(s)}</details>
     <h3>Key visual prompt</h3>
-    <div class="g2"><div class="f"><label for="n_${i}">Images on this board</label><select id="n_${i}" data-change="setN" data-i="${i}"${can ? "" : " disabled"}>${[1, 2, 3].map((n) => `<option value="${n}"${b.n === n ? " selected" : ""}>${n === 1 ? "1 · one key visual" : n === 2 ? "2 · start and end frame" : "3 · sequence"}</option>`).join("")}</select></div>
+    ${b.stale && editable(b) ? `<div class="alert"><b>Script ${i + 1} changed</b> after these prompts were drafted. Redraft the prompts, then generate the scenes again.</div>` : ""}
+    <div class="g2"><div class="f"><label>Images on this board</label><p style="margin:0;font-size:14px"><b>${b.n}</b>: one per scene in script ${i + 1}</p></div>
       ${can ? `<div class="f"><label>&nbsp;</label><div class="actions"><button class="btn sec" data-act="draftBoard" data-v="${i}"${b.busy ? " disabled" : ""}>${spin(b.busy, "Drafting…", b.drafted ? "Redraft prompt with AI" : "Draft prompt with AI")}</button>${b._fb ? '<span class="tag-fb">sample</span>' : ""}</div></div>` : ""}</div>
-    <div class="g3">${b.frames.map((f, k) => `<div class="f"><label for="pose_${i}_${k}">POSE · image ${k + 1}</label><textarea id="pose_${i}_${k}" rows="3" data-pose="${i}:${k}"${can ? "" : " readonly"} placeholder="What is in image ${k + 1}">${esc(f.pose)}</textarea></div>`).join("")}</div>
+    <div class="g3">${b.frames.map((f, k) => `<div class="f"><label for="pose_${i}_${k}">POSE · scene ${k + 1}${s.beats[k] ? " · " + esc(s.beats[k].time) : ""}</label><textarea id="pose_${i}_${k}" rows="3" data-pose="${i}:${k}"${can ? "" : " readonly"} placeholder="What is in scene ${k + 1}">${esc(f.pose)}</textarea></div>`).join("")}</div>
     <div class="g2">${PROMPT_FIELDS.map(([k, l]) => `<div class="f"><label for="bp_${i}_${k}">${l}</label><textarea id="bp_${i}_${k}" rows="3" data-bp="${i}:${k}"${can ? "" : " readonly"}>${esc(b.p[k])}</textarea></div>`).join("")}</div>
-    ${can ? `<div class="actions"><button class="btn ai" data-act="genBoard" data-v="${i}"${busy["b" + i] || busy.all ? " disabled" : ""}>${spin(busy["b" + i], "Generating…", b.frames.some((f) => f.cur >= 0) ? "Generate this board again" : `Generate ${b.n} image${b.n > 1 ? "s" : ""}`)}</button><span class="note">Image 1 first; the others follow it for continuity</span></div>` : ""}
-    <div class="frames">${b.frames.map((f, k) => { const v = f.versions[f.cur]; return `<div class="frame"><button class="img${b.selFrame === k ? " sel" : ""}" data-act="selFrame" data-v="${i}:${k}" aria-label="Image ${k + 1}">${v ? `<img src="${v.img}" alt="Board ${i + 1} image ${k + 1}">` : ""}<span class="lab">Image ${k + 1}</span>${f.busy ? '<span class="spin"><span class="spinner"></span>&nbsp;AI…</span>' : ""}</button>${v && v.fb ? '<span class="tag-fb">sample</span>' : v ? `<span class="note">v${f.cur + 1}${f.versions.length > 1 ? " of " + f.versions.length : ""}</span>` : ""}</div>`; }).join("")}</div>
-    ${fr && fr.cur >= 0 ? `<div class="sub"><h3>Image ${b.selFrame + 1} · versions</h3>
+    ${can ? `<div class="actions"><button class="btn ai" data-act="genBoard" data-v="${i}"${busy["b" + i] || busy.all ? " disabled" : ""}>${spin(busy["b" + i], "Generating…", b.frames.some((f) => f.cur >= 0) ? "Generate this board again" : `Generate ${b.n} scene${b.n > 1 ? "s" : ""}`)}</button><span class="note">Scene 1 first; the others follow it for continuity</span></div>` : ""}
+    <div class="frames">${b.frames.map((f, k) => { const v = f.versions[f.cur]; return `<div class="frame"><button class="img${b.selFrame === k ? " sel" : ""}" data-act="selFrame" data-v="${i}:${k}" aria-label="Scene ${k + 1}">${v ? `<img src="${v.img}" alt="Board ${i + 1} scene ${k + 1}">` : ""}<span class="lab">Scene ${k + 1}</span>${f.busy ? '<span class="spin"><span class="spinner"></span>&nbsp;AI…</span>' : ""}</button>${v && v.fb ? '<span class="tag-fb">sample</span>' : v ? `<span class="note">v${f.cur + 1}${f.versions.length > 1 ? " of " + f.versions.length : ""}</span>` : ""}</div>`; }).join("")}</div>
+    ${fr && fr.cur >= 0 ? `<div class="sub"><h3>Scene ${b.selFrame + 1} · versions</h3>
       <div class="vers" aria-label="Versions">${fr.versions.map((v, n) => `<button class="${fr.cur === n ? "sel" : ""}" data-act="selVer" data-v="${i}:${b.selFrame}:${n}" title="${esc(v.label)}"><img src="${v.img}" alt="Version ${n + 1}"></button>`).join("")}</div>
       <details><summary class="note">Prompt sent for v${fr.cur + 1}</summary><pre class="prompt">${esc(fr.versions[fr.cur].prompt)}</pre></details>
-      ${can ? `<div class="inline"><div class="f"><label for="refine_${i}">Revision prompt for image ${b.selFrame + 1}</label><textarea id="refine_${i}" rows="3" placeholder="- make the Fold8 in the front more visible&#10;- don't change the orientation of the phones"></textarea></div><button class="btn ai" data-act="refine" data-v="${i}"${busy["r" + i] ? " disabled" : ""}>${spin(busy["r" + i], "Editing…", "Revise with AI")}</button><button class="btn sec" data-act="regenFrame" data-v="${i}"${busy["r" + i] ? " disabled" : ""}>New take</button></div><p class="note">Manual edit may still be needed after AI revisions.</p>` : ""}</div>` : ""}
+      ${can ? `<div class="inline"><div class="f"><label for="refine_${i}">Revision prompt for scene ${b.selFrame + 1}</label><textarea id="refine_${i}" rows="3" placeholder="- make the Fold8 in the front more visible&#10;- don't change the orientation of the phones"></textarea></div><button class="btn ai" data-act="refine" data-v="${i}"${busy["r" + i] ? " disabled" : ""}>${spin(busy["r" + i], "Editing…", "Revise with AI")}</button><button class="btn sec" data-act="regenFrame" data-v="${i}"${busy["r" + i] ? " disabled" : ""}>New take</button></div><p class="note">Manual edit may still be needed after AI revisions.</p>` : ""}</div>` : ""}
     <h3>Prompt to video <span class="note">Handed to production for Flow</span></h3>
     <div class="g2">${VIDEO_FIELDS.map(([k, l, r]) => `<div class="f"><label for="vp_${i}_${k}">${l}</label><textarea id="vp_${i}_${k}" rows="${r}" data-vp="${i}:${k}"${can ? "" : " readonly"}>${esc(b.video[k])}</textarea></div>`).join("")}</div>
     </section>
     ${mine && nEdit ? `<section class="card"><h2>Satisfied with the boards?</h2><div class="actions"><button class="btn" data-act="submitBoard">${rev ? `Send ${nEdit} revised board(s) to joint re-review` : `Submit ${nEdit} board(s) for internal review`}</button>${S.boards.length > 1 ? `<span class="note">Every open board needs its images first</span>` : ""}</div></section>` : ""}`;
 }
 function scriptTable(s) {
-  return `<table class="beats"><tbody>${s.beats.map((b) => `<tr><td style="white-space:nowrap;color:#55577A">${esc(b.time)}</td><td>${esc(b.visual)}<br><i style="color:#55577A">“${esc(b.voiceover)}”</i>${b.onscreen ? `<br><b>On screen:</b> ${esc(b.onscreen)}` : ""}</td></tr>`).join("")}</tbody></table>`;
+  return `${s.follows ? `<p class="follows"><b>Follows the direction:</b> ${esc(s.follows)}</p>` : ""}<table class="beats"><tbody>${s.beats.map((b, k) => `<tr><td style="white-space:nowrap;color:#55577A">Scene ${k + 1}<br>${esc(b.time)}</td><td>${esc(b.visual)}<br><i style="color:#55577A">“${esc(b.voiceover)}”</i>${b.onscreen ? `<br><b>On screen:</b> ${esc(b.onscreen)}` : ""}</td></tr>`).join("")}</tbody></table>`;
 }
 function boardHTML(i) {
   const b = S.boards[i];
   return `${scriptTable(S.scripts[i])}
-  <div class="frames">${b.frames.map((f, k) => { const v = f.versions[f.cur]; return `<div class="frame"><div class="img" style="cursor:default">${v ? `<img src="${v.img}" alt="Board ${i + 1} image ${k + 1}">` : ""}<span class="lab">Image ${k + 1}</span></div></div>`; }).join("")}</div>
+  <div class="frames">${b.frames.map((f, k) => { const v = f.versions[f.cur]; return `<div class="frame"><div class="img" style="cursor:default">${v ? `<img src="${v.img}" alt="Board ${i + 1} scene ${k + 1}">` : ""}<span class="lab">Scene ${k + 1}</span></div></div>`; }).join("")}</div>
   <details><summary class="note">Prompt to video</summary><pre class="prompt">${esc(VIDEO_FIELDS.map(([k, l]) => `${l}:\n${b.video[k]}`).join("\n\n"))}</pre></details>`;
 }
 function boardDecision(i, opts, mine) {
   const d = (typeof S.decision[S.stage] === "object" ? S.decision[S.stage] : {})[i];
   return `<div class="decision"><div class="g2">${opts.map(([v, t, sub]) => `<label class="radio${d === v ? " sel" : ""}"><input type="radio" name="dec_${i}" data-change="pickDecision" value="${i}:${v}"${d === v ? " checked" : ""}${mine ? "" : " disabled"}><span><b style="font-size:14px">${t}</b><br><span class="note">${sub}</span></span></label>`).join("")}</div>
-  ${mine ? `<div class="f"><label for="cm_${i}">Comment on board ${i + 1}${d === "revise" ? " (what should change?)" : " (optional)"}</label><textarea id="cm_${i}" rows="2" placeholder="${S.stage === "client_board" ? "e.g. Make the Fold8 bigger in image 2" : "Feedback for the team"}"></textarea></div>` : ""}</div>`;
+  ${mine ? `<div class="f"><label for="cm_${i}">Comment on board ${i + 1}${d === "revise" ? " (what should change?)" : " (optional)"}</label><textarea id="cm_${i}" rows="2" placeholder="${S.stage === "client_board" ? "e.g. Make the Fold8 bigger in scene 2" : "Feedback for the team"}"></textarea></div>` : ""}</div>`;
 }
 function decisionHTML(opts, mine) {
   const d = S.decision[S.stage];
@@ -709,7 +743,7 @@ function boardReview(st, mine, wait, bp) {
     : [["approve", "Approve this board", "Ready for production."], ["revise", "Request changes", "One round: Cheil revises, then we re-review together."]];
   const dec = typeof S.decision[st.id] === "object" ? S.decision[st.id] : {};
   const nDone = idx.filter((i) => dec[i]).length;
-  return `<section class="card${client ? " portal" : ""}">${client ? '<span class="portal-tag">Samsung review portal</span>' : ""}<h2>${title} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "internal_board" ? "Creative Leads · Internal review → Approved? (per board)" : st.id === "client_board" ? "Samsung · Review board → Approved? (per board; BAU: one revision, then joint re-review)" : "Cheil + Samsung · Re-review revised boards together")}${wait}
+  return `${briefPanel()}<section class="card${client ? " portal" : ""}">${client ? '<span class="portal-tag">Samsung review portal</span>' : ""}<h2>${title} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "internal_board" ? "Creative Leads · Internal review → Approved? (per board)" : st.id === "client_board" ? "Samsung · Review board → Approved? (per board; BAU: one revision, then joint re-review)" : "Cheil + Samsung · Re-review revised boards together")}${wait}
     <p class="muted">${idx.length} board${idx.length > 1 ? "s" : ""} to review${joint ? "" : ", each approved or sent back on its own"}.${others.length ? ` Already settled: ${others.map((i) => `board ${i + 1} (${(STATUS[S.boards[i].status] || [""])[0].toLowerCase()})`).join(", ")}.` : ""}</p>
     ${st.id === "internal_board" ? `<div class="actions">${mine ? `<button class="btn ai" data-act="aiCheckAll"${busy.check ? " disabled" : ""}>${spin(busy.check, "Checking…", "AI pre-check: all boards against the brief")}</button>` : ""}<span class="note">The AI flags anything off-brief before Samsung sees it.</span></div>` : ""}</section>
     ${idx.map((i) => { const b = S.boards[i]; return `<section class="card${client ? " portal" : ""}"><h2><span>Board ${i + 1} · ${esc(S.scripts[i].title)} <span class="note">→ Video ${i + 1}</span></span>${statusPill(b)}</h2>
@@ -725,7 +759,7 @@ function playerHTML(v, i) {
 }
 function productionView(st, mine, wait, bp) {
   const fb = S.comments.find((c) => c.stage === "client_content");
-  return `<section class="card"><h2>${st.id === "content_revision" ? "Content revision" : "Video production"} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "content_revision" ? "Creative · Revise content (Samsung feedback) → internal re-review" : "Creative · Produce videos in Flow, After Effects and Suno → upload")}${wait}
+  return `${briefPanel()}<section class="card"><h2>${st.id === "content_revision" ? "Content revision" : "Video production"} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "content_revision" ? "Creative · Revise content (Samsung feedback) → internal re-review" : "Creative · Produce videos in Flow, After Effects and Suno → upload")}${wait}
     ${st.id === "content_revision" && fb ? `<div class="alert"><b>Samsung's feedback:</b> ${esc(fb.text)}</div>` : ""}
     <p class="muted">One video per approved board. Production animates each board's images in Flow with its prompt to video, then finishes in After Effects and Suno. In this demo the boards become animated previews.</p>
     <details><summary class="note">Prompts to video for Flow (${S.boards.length})</summary>${S.boards.map((b, i) => `<p style="margin:10px 0 4px"><b>Video ${i + 1} · ${esc(S.scripts[i].title)}</b></p><pre class="prompt">${esc(VIDEO_FIELDS.map(([k, l]) => `${l}:\n${b.video[k]}`).join("\n\n"))}\n\n—\nManual edit is required.</pre>`).join("")}</details>
@@ -740,13 +774,13 @@ function contentReview(st, mine, wait, bp) {
     : st.id === "client_content" ? [["approve", "Approve all", "Cheil closes the task and delivers the final files."], ["revise", "Request changes", "One round. Later changes need a new brief."]]
     : [["approve", "Re-review passed", "Account closes the task."]];
   const title = st.id === "internal_content" ? "Internal content review" : st.id === "client_content" ? "Content review" : "Internal re-review";
-  return `<section class="card${client ? " portal" : ""}">${client ? '<span class="portal-tag">Samsung review portal</span>' : ""}<h2>${title} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "client_content" ? "Samsung · Review content → Approved? (No: Cheil revises once, internal re-review)" : st.id === "internal_content" ? "Creative Leads · Internal content review" : "Creative Leads · Internal re-review → process complete")}${wait}
+  return `${briefPanel()}<section class="card${client ? " portal" : ""}">${client ? '<span class="portal-tag">Samsung review portal</span>' : ""}<h2>${title} <span class="pill ok">Step: ${fmtH(st.hours)}</span></h2>${bp(st.id === "client_content" ? "Samsung · Review content → Approved? (No: Cheil revises once, internal re-review)" : st.id === "internal_content" ? "Creative Leads · Internal content review" : "Creative Leads · Internal re-review → process complete")}${wait}
     <div class="vids">${S.videos.map(playerHTML).join("")}</div></section>
     <section class="card"><h2>Your decision</h2>${decisionHTML(opts, mine)}</section>`;
 }
 function closedView() {
   const met = S.elapsed <= SLA_H;
-  return `<section class="card"><h2>Task closed <span class="pill ${met ? "ok" : "bad"}">${met ? "SLA met" : "SLA missed"} · ${fmtH(S.elapsed)} of 45 h</span></h2>
+  return `${briefPanel()}<section class="card"><h2>Task closed <span class="pill ${met ? "ok" : "bad"}">${met ? "SLA met" : "SLA missed"} · ${fmtH(S.elapsed)} of 45 h</span></h2>
     <p class="muted">Final files delivered to Samsung. Any further change starts a new brief linked to this one.</p>
     <div class="vids">${S.videos.map(playerHTML).join("")}</div></section>
     <section class="card"><h2>Hand-off log</h2><table class="beats"><thead><tr><th>Clock</th><th>Who</th><th>What</th></tr></thead><tbody>${S.log.slice().reverse().map((e) => `<tr><td style="white-space:nowrap">${fmtH(e.at)}</td><td style="white-space:nowrap">${esc(ROLES[e.actor])}</td><td>${esc(e.text)}</td></tr>`).join("")}</tbody></table>
@@ -759,6 +793,7 @@ function sideView() {
 }
 
 // ---------- events ----------
+document.addEventListener("toggle", (e) => { if (e.target.classList && e.target.classList.contains("bp")) ui.bpOpen = e.target.open; }, true);
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const f = A[b.dataset.act]; if (f) { e.preventDefault(); syncAll(); f(b.dataset.v, b); }
@@ -794,7 +829,7 @@ async function checkAI() {
 // ---------- boot ----------
 (async () => {
   const saved = await DB.get("state");
-  if (saved && saved.v === fresh().v) S = saved;
+  if (saved && saved.v === fresh().v) { S = saved; S.hist = S.hist || []; }
   render(); checkAI();
 })();
 })();
